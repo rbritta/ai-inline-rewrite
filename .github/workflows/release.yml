@@ -73,7 +73,7 @@ jobs:
 
       - name: Keep the rehearsal's files
         if: github.ref_type != 'tag'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rehearsal-${{ env.TAG }}
           path: |
