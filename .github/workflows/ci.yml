@@ -43,7 +43,7 @@ jobs:
         run: dotnet publish src/AiInlineRewrite/AiInlineRewrite.csproj -p:PublishProfile=win-x64 --nologo
 
       - name: Upload the exe
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: AiInlineRewrite-win-x64
           path: artifacts/publish/win-x64/AiInlineRewrite.exe
