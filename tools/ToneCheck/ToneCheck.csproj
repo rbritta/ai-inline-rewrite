@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!--
+      Runs sample sentences through every tone with the app's own engines, prompts and shaping (the files are linked,
+      not copied), against Ollama or Claude, and prints a Markdown table. docs/PROMPTS.md holds a run of it.
+      Usage: see the comment at the top of Program.cs (an XML comment cannot hold the double dash of its options).
+    -->
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Compile Include="..\..\src\AiInlineRewrite\Core\EngineChoices.cs" Link="Linked\EngineChoices.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\EngineStatus.cs" Link="Linked\EngineStatus.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\Lang.cs" Link="Linked\Lang.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\Prompts.cs" Link="Linked\Prompts.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\Settings.cs" Link="Linked\Settings.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\AirKey.cs" Link="Linked\AirKey.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\TextShape.cs" Link="Linked\TextShape.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\Tone.cs" Link="Linked\Tone.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Llm\ClaudeClient.cs" Link="Linked\ClaudeClient.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Llm\IRewriteEngine.cs" Link="Linked\IRewriteEngine.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Llm\OllamaClient.cs" Link="Linked\OllamaClient.cs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Anthropic" Version="13.12.0" />
+    </ItemGroup>
+
+</Project>

@@ -1,0 +1,50 @@
+name: CI
+
+# Windows only: the app is WPF + WinForms (net9.0-windows). The tests are a plain net9.0 project that links the pure
+# source files and the engine clients, so they need no desktop runtime, no Ollama and no Anthropic key.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+          # no NuGet cache: setup-dotnet caches from packages.lock.json files, which this repo does not keep
+
+      - name: Build
+        run: dotnet build AiInlineRewrite.sln -c Release --nologo
+
+      - name: Test with coverage
+        run: dotnet test tests/AiInlineRewrite.Tests/AiInlineRewrite.Tests.csproj -c Release --no-build --verbosity normal --collect "Code Coverage;Format=cobertura" --results-directory TestResults
+
+      - name: Coverage summary
+        shell: pwsh
+        run: ./tools/coverage-summary.ps1 -Path TestResults
+
+      - name: Publish (self-contained single file)
+        run: dotnet publish src/AiInlineRewrite/AiInlineRewrite.csproj -p:PublishProfile=win-x64 --nologo
+
+      - name: Upload the exe
+        uses: actions/upload-artifact@v4
+        with:
+          name: AiInlineRewrite-win-x64
+          path: artifacts/publish/win-x64/AiInlineRewrite.exe
+          if-no-files-found: error

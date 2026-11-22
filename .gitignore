@@ -1,0 +1,29 @@
+# Build output
+bin/
+obj/
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+
+# Visual Studio / Rider
+.vs/
+*.user
+*.suo
+*.vsidx
+*.DotSettings.user
+_ReSharper*/
+
+# NuGet
+packages/
+*.nupkg
+
+# Release zips (shipped through GitHub Releases, not the repo)
+*.zip
+
+# Test / coverage output
+[Tt]est[Rr]esult*/
+*.trx
+coverage*.xml
+
+# Python
+__pycache__/

@@ -1,0 +1,13 @@
+# Normalize line endings: LF in the repository and on checkout, as in the author's other projects.
+# PowerShell scripts and the solution file stay CRLF, the line ending their Windows tools write.
+* text=auto eol=lf
+*.ps1 text eol=crlf
+*.sln text eol=crlf
+
+# Binary assets
+*.png binary
+*.ico binary
+*.zip binary
+
+# Keep GitHub language stats focused on the app: the design pages are mockups, not the product
+design/** linguist-documentation

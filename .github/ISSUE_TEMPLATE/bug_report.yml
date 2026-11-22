@@ -1,0 +1,41 @@
+name: Bug report
+description: Something does not work the way the README says it does.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. Please search the open issues first. A security problem goes through [SECURITY.md](https://github.com/rbritta/ai-inline-rewrite/blob/main/SECURITY.md), not here.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The version in the tray tooltip or the release you downloaded.
+      placeholder: 0.1.0
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you typed and where, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: The app you typed in (Notepad, a browser, Slack...), the AIR key, the tone, and the steps.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Windows version, keyboard layout, the engine and model (and for Ollama, its version and whether it runs on a GPU).
+      placeholder: Windows 11 24H2, ABNT2, Ollama 0.x, qwen2.5:7b on a GPU
+  - type: textarea
+    id: more
+    attributes:
+      label: Anything else
+      description: A screenshot, or the diagnostic log (DiagnosticLog in settings.json; it never holds what you typed). Remove anything private.

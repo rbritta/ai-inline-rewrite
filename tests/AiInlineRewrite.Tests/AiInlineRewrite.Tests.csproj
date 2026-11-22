@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <IsPackable>false</IsPackable>
+        <RootNamespace>AiInlineRewrite.Tests</RootNamespace>
+        <AssemblyName>AiInlineRewrite.Tests</AssemblyName>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Anthropic" Version="13.12.0" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+        <PackageReference Include="xunit" Version="2.9.2" />
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <!--
+      The app is a WPF + WinForms exe for Windows only, so the tests do NOT reference it. They LINK the source files
+      that need no desktop: the pure logic (src/AiInlineRewrite/Core) and the two engine clients (src/AiInlineRewrite/Llm,
+      plain HttpClient and the Anthropic SDK, driven here through fake HTTP handlers). This plain net9.0 assembly runs
+      with a plain `dotnet test` and no desktop runtime. A new Core or Llm file is added here.
+    -->
+    <ItemGroup>
+        <Compile Include="..\..\src\AiInlineRewrite\Core\AirKey.cs" Link="Linked\AirKey.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\AirKeyDetector.cs" Link="Linked\AirKeyDetector.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\EngineChoices.cs" Link="Linked\EngineChoices.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\EngineStatus.cs" Link="Linked\EngineStatus.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\Lang.cs" Link="Linked\Lang.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\Log.cs" Link="Linked\Log.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\PickMode.cs" Link="Linked\PickMode.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\Prompts.cs" Link="Linked\Prompts.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\Sentence.cs" Link="Linked\Sentence.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\Settings.cs" Link="Linked\Settings.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\SettingsStore.cs" Link="Linked\SettingsStore.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\TextShape.cs" Link="Linked\TextShape.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\Tone.cs" Link="Linked\Tone.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\WordDiff.cs" Link="Linked\WordDiff.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Llm\ClaudeClient.cs" Link="Linked\ClaudeClient.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Llm\IRewriteEngine.cs" Link="Linked\IRewriteEngine.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Llm\OllamaClient.cs" Link="Linked\OllamaClient.cs" />
+    </ItemGroup>
+
+</Project>

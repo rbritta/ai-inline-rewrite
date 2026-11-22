@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIR experience</title>
+<style>
+  :root, .th-light { color-scheme:light; --page:#eef0f3; --panel:#ffffff; --ink:#1f2937; --muted:#6b7280; --line:#d9dde3;
+    --desk:#dbe4ee; --win:#ffffff; --winbar:#f3f3f3; --surf:#ffffff; --surf2:#f7fafc; --bd:#e3e3e3; --tx:#1f1f1f; --mut:#6b6b6b;
+    --hov:rgba(2,132,199,.08); --acc:#0284c7; --onacc:#ffffff; --keybg:#f3f3f3; --tint:#f0f9ff;
+    --delc:#b91c1c; --delb:#fee2e2; --insc:#15803d; --insb:#dcfce7; --field:#ffffff; --fieldbd:#cfd6de; --task:rgba(243,243,243,.92); }
+  :root[data-theme=dark], .th-dark { color-scheme:dark; --page:#141414; --panel:#1f1f1f; --ink:#e5e7eb; --muted:#9ca3af; --line:#333333;
+    --desk:#18222d; --win:#202020; --winbar:#2b2b2b; --surf:#2b2b2b; --surf2:#262b31; --bd:#3a3a3a; --tx:#f3f3f3; --mut:#a3a3a3;
+    --hov:rgba(125,211,252,.12); --acc:#7dd3fc; --onacc:#0b1220; --keybg:#383838; --tint:rgba(125,211,252,.08);
+    --delc:#fca5a5; --delb:rgba(248,113,113,.18); --insc:#86efac; --insb:rgba(74,222,128,.18); --field:#2b2b2b; --fieldbd:#4a4f55; --task:rgba(32,32,32,.92); }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--page); color:var(--ink); font:14px/1.45 "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; }
+  main { max-width:1360px; margin:0 auto; padding:24px 16px 64px; }
+  h1 { font-size:24px; margin:0 0 4px; }
+  h2 { font-size:15px; margin:0 0 8px; }
+  .sub { color:var(--muted); margin:0 0 14px; max-width:900px; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:12px; }
+  .bar button { font:inherit; padding:5px 12px; border-radius:6px; border:1px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer; }
+  .bar button:hover { border-color:var(--acc); }
+  .engine { font-size:12px; padding:3px 10px; border-radius:999px; background:var(--panel); border:1px solid var(--line); color:var(--muted); }
+  .engine.live { color:var(--insc); border-color:var(--insc); }
+  .layout { display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:16px; align-items:start; }
+  @media (max-width: 1100px) { .layout { grid-template-columns:1fr; } }
+  aside { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  aside ol { margin:0 0 14px; padding-left:20px; }
+  aside li { margin-bottom:4px; }
+  .log { list-style:none; padding:0; margin:0; font-size:12.5px; max-height:330px; overflow:auto; }
+  .log li { padding:4px 0; border-top:1px solid var(--line); }
+  .log li:first-child { border-top:0; }
+  .log time { color:var(--muted); font-family:"Cascadia Mono", Consolas, monospace; font-size:11px; margin-right:6px; }
+  kbd { font:600 11px/1 "Cascadia Mono", Consolas, monospace; padding:2px 5px; border-radius:4px; border:1px solid var(--line); border-bottom-width:2px; background:var(--page); }
+
+  /* the fake desktop */
+  .desk { position:relative; height:700px; border-radius:12px; overflow:hidden; background:var(--desk); border:1px solid var(--line); user-select:none; }
+  .win { position:absolute; left:24px; top:24px; width:min(540px, calc(100% - 48px)); background:var(--win); border:1px solid var(--bd); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.16); overflow:hidden; }
+  .wbar { background:var(--winbar); color:var(--tx); font-size:12px; padding:7px 12px; border-bottom:1px solid var(--bd); display:flex; justify-content:space-between; }
+  .wbar span:last-child { color:var(--mut); letter-spacing:6px; }
+  .whead { display:flex; gap:10px; padding:6px 14px; border-bottom:1px solid var(--bd); color:var(--tx); font-size:13px; }
+  .whead label { color:var(--mut); width:56px; }
+  textarea { display:block; width:100%; height:170px; resize:none; border:0; outline:0; padding:12px 14px; background:var(--field); color:var(--tx);
+    font:15px/22px "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif; user-select:text; }
+  textarea.flash { animation:flash .7s ease-out; }
+  @keyframes flash { from { background:var(--insb); } to { background:var(--field); } }
+  .task { position:absolute; left:0; right:0; bottom:0; height:40px; background:var(--task); border-top:1px solid var(--bd); display:flex; align-items:center; justify-content:flex-end; gap:12px; padding:0 14px; color:var(--tx); font-size:12px; }
+  .tray { display:inline-flex; padding:4px; border-radius:4px; cursor:pointer; }
+  .tray:hover { background:var(--hov); }
+  .tray.off svg { filter:grayscale(1); opacity:.5; }
+  .toast { position:absolute; right:14px; bottom:50px; background:var(--surf); color:var(--tx); border:1px solid var(--bd); border-radius:8px; padding:10px 14px; box-shadow:0 8px 24px rgba(0,0,0,.2); display:flex; gap:8px; align-items:center; opacity:0; transform:translateY(8px); transition:.25s; pointer-events:none; z-index:9; }
+  .toast.show { opacity:1; transform:none; }
+
+  /* bubble, shared */
+  .bub { position:absolute; z-index:5; color:var(--tx); font-size:14px; }
+  .bub[hidden] { display:none; }
+  .key { display:inline-flex; align-items:center; justify-content:center; min-width:20px; height:20px; padding:0 5px; border-radius:4px; font:600 11px/1 "Cascadia Mono", Consolas, monospace;
+    background:var(--keybg); color:var(--tx); border:1px solid var(--bd); border-bottom-width:2px; flex:none; transition:background .15s, color .15s; }
+  .gear { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border:0; border-radius:6px; background:transparent; color:var(--mut); cursor:pointer; padding:0; flex:none; }
+  .gear:hover { background:var(--hov); color:var(--tx); }
+  .tools { display:flex; align-items:center; flex:none; }
+  .gear.fol { display:inline-grid; place-items:center; width:22px; transition:color .2s, background .2s; }
+  .fol.on, .fol.on:hover { color:var(--acc); }
+  .fol svg { grid-area:1 / 1; transition:opacity .18s, transform .18s; }
+  .fol.on .s-off, .fol:not(.on) .s-on { opacity:0; transform:scale(.6); }
+  .bub.glide { transition:left .25s ease-out, top .25s ease-out; }
+  .st { color:var(--mut); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .st kbd { font-size:10px; padding:1px 4px; background:var(--keybg); border-color:var(--bd); color:var(--tx); }
+  del { color:var(--delc); background:var(--delb); text-decoration:line-through; border-radius:3px; padding:0 2px; }
+  ins { color:var(--insc); background:var(--insb); text-decoration:none; border-radius:3px; padding:0 2px; }
+  .row { cursor:pointer; }
+  .row:hover { background:var(--hov); }
+  .row.wait .txt::after { content:"▍"; color:var(--acc); animation:blink 1s steps(1) infinite; }
+  .row.hint { cursor:default; color:var(--mut); }
+  .row.hint:hover { background:transparent; }
+  @keyframes blink { 50% { opacity:0; } }
+  .grab { cursor:grab; }
+  .grab:active { cursor:grabbing; }
+  .timer { height:2px; }
+  .timer i { display:block; height:100%; width:0; background:var(--acc); }
+  .pick .timer i { animation:shrink 4s linear forwards; }
+  @keyframes shrink { from { width:100%; } to { width:0; } }
+  .pick .key { background:var(--acc); color:var(--onacc); border-color:transparent; }
+  .shake { animation:shake .3s; }
+  @keyframes shake { 25% { transform:translateX(-4px); } 75% { transform:translateX(4px); } }
+
+  /* A: Windows 11 card */
+  .A { width:440px; background:var(--surf); border:1px solid var(--bd); border-radius:8px; box-shadow:0 8px 28px rgba(0,0,0,.18); overflow:hidden; }
+  .A.pick { border-color:var(--acc); }
+  .A .hdr { display:flex; align-items:center; gap:8px; padding:7px 8px 7px 12px; border-bottom:1px solid var(--bd); }
+  .A .hdr b { font-size:12px; }
+  .A .hdr .st { flex:1; }
+  .A .row { display:flex; gap:10px; padding:9px 12px; align-items:flex-start; border-left:3px solid transparent; }
+  .A .row.sel { background:var(--hov); border-left-color:var(--acc); }
+  .A .tone { font-size:11px; color:var(--mut); text-transform:uppercase; letter-spacing:.04em; margin-bottom:1px; }
+
+  /* B: compact list */
+  .B { width:430px; background:var(--surf); border:1px solid var(--bd); border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,.16); padding:4px 0 0; overflow:hidden; }
+  .B.pick { border-color:var(--acc); }
+  .B .row { display:flex; gap:10px; align-items:baseline; padding:6px 12px; border-left:3px solid transparent; }
+  .B .row.sel { background:var(--hov); border-left-color:var(--acc); }
+  .B .row .txt { flex:1; }
+  .B .row .tone { font-size:11px; color:var(--mut); }
+  .B .foot { display:flex; align-items:center; gap:6px; padding:3px 6px 3px 12px; border-top:1px solid var(--bd); margin-top:4px; }
+  .B .foot b { font-size:12px; }
+  .B .foot .st { flex:1; }
+
+  /* settings window */
+  .pop { position:absolute; z-index:8; right:14px; top:14px; width:384px; max-height:calc(100% - 68px); display:flex; flex-direction:column; background:var(--surf); color:var(--tx);
+    border:1px solid var(--bd); border-radius:12px; box-shadow:0 18px 48px rgba(2,32,64,.30); overflow:hidden; font-size:13px; user-select:none; }
+  .pop[hidden] { display:none; }
+  .ph { display:flex; align-items:center; gap:8px; height:40px; padding:0 6px 0 12px; border-bottom:1px solid var(--bd); flex:none; }
+  .ph .ttl { flex:1; min-width:0; display:flex; align-items:baseline; gap:6px; white-space:nowrap; }
+  .ph .ttl b { font-size:13px; font-weight:600; }
+  .ph .ttl .dot, .ph .ttl small { color:var(--mut); font-size:12px; }
+  .ph .x { width:28px; height:28px; border:0; border-radius:6px; background:transparent; color:var(--mut); cursor:pointer; display:flex; align-items:center; justify-content:center; flex:none; }
+  .ph .x:hover { background:var(--hov); color:var(--tx); }
+  .pb { overflow:auto; padding:4px 16px 16px; }
+  .pb section { padding:14px 0 12px; border-top:1px solid var(--bd); }
+  .pb section:first-child { border-top:0; }
+  .pb h3 { font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--acc); margin:0 0 2px; font-weight:700; }
+  .help { margin:0 0 9px; color:var(--mut); font-size:12px; line-height:1.4; }
+  .help.after { margin:7px 0 0; }
+  .line { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .line .help { margin:0; }
+  .line > div { flex:1; min-width:0; }
+  .line .lic { display:grid; place-items:center; align-self:stretch; width:26px; flex:none; color:var(--mut); transition:color .2s; }
+  .line .lic.on { color:var(--acc); }
+  .tones { list-style:none; margin:0; padding:0; border:1px solid var(--bd); border-radius:10px; overflow:hidden; background:var(--surf2); }
+  .ti { display:flex; align-items:center; gap:8px; padding:8px 8px 8px 4px; border-top:1px solid var(--bd); background:var(--surf); transition:background .15s; }
+  .ti:first-child { border-top:0; }
+  .ti:hover { background:var(--tint); }
+  .ti.dis .tinfo b, .ti.dis .num { opacity:.45; }
+  .ti.dragging { opacity:.35; }
+  .ti.drop-before { box-shadow:inset 0 3px 0 -1px var(--acc); }
+  .ti.drop-after { box-shadow:inset 0 -3px 0 -1px var(--acc); }
+  .grip { cursor:grab; color:var(--mut); display:flex; padding:4px 2px; opacity:.7; }
+  .grip:hover { opacity:1; color:var(--acc); }
+  .num { width:22px; height:22px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; font:700 11px/1 "Cascadia Mono", Consolas, monospace; background:var(--hov); color:var(--acc); flex:none; }
+  .tinfo { flex:1; min-width:0; }
+  .tinfo b { display:block; font-size:13px; font-weight:600; }
+  .tinfo small { display:block; color:var(--mut); font-size:11.5px; line-height:1.35; }
+  .mv { display:flex; flex-direction:column; gap:3px; flex:none; }
+  .mv button { width:26px; height:19px; border:1px solid var(--bd); border-radius:6px; background:var(--surf); color:var(--mut); cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
+  .mv button:hover:not(:disabled) { color:var(--acc); border-color:var(--acc); background:var(--hov); }
+  .mv button:disabled { opacity:.3; cursor:default; }
+  .chk { display:inline-flex; cursor:pointer; flex:none; }
+  .chk input, .seg input, .sw input { position:absolute; opacity:0; width:0; height:0; }
+  .chk i { width:18px; height:18px; border-radius:5px; border:1.5px solid var(--fieldbd); display:inline-flex; align-items:center; justify-content:center; transition:.15s; background:var(--field); }
+  .chk input:checked + i { background:var(--acc); border-color:transparent; }
+  .chk input:checked + i::after { content:""; width:9px; height:5px; border:2px solid var(--onacc); border-top:0; border-right:0; transform:translateY(-1px) rotate(-45deg); }
+  .chk input:focus-visible + i, .sw input:focus-visible + i { outline:2px solid var(--acc); outline-offset:2px; }
+  .seg { display:flex; padding:3px; gap:3px; background:var(--keybg); border-radius:10px; }
+  .seg label { flex:1; text-align:center; padding:6px 0; border-radius:8px; cursor:pointer; color:var(--tx); font-size:12.5px; transition:background .15s; }
+  .seg label:hover { background:var(--hov); }
+  .seg label:has(input:checked) { background:var(--acc); color:var(--onacc); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,.18); }
+  .sw { display:inline-flex; align-items:center; gap:8px; cursor:pointer; flex:none; }
+  .sw i { width:40px; height:22px; border-radius:999px; background:var(--fieldbd); position:relative; transition:.2s; flex:none; }
+  .sw i::after { content:""; position:absolute; left:3px; top:3px; width:16px; height:16px; border-radius:50%; background:#fff; transition:.2s; box-shadow:0 1px 3px rgba(0,0,0,.3); }
+  .sw input:checked + i { background:var(--acc); }
+  .sw input:checked + i::after { left:21px; background:var(--onacc); }
+  .sw span { font-size:12px; font-weight:600; min-width:24px; }
+  .pop select { appearance:none; width:100%; padding:7px 32px 7px 10px; border-radius:8px; border:1px solid var(--fieldbd); color:var(--tx); font:inherit; cursor:pointer;
+    background:var(--field) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%230284C7' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 11px center; }
+  .pop select:focus { outline:2px solid var(--acc); outline-offset:1px; }
+  .pb h3 + .seg { margin-top:8px; }
+
+  /* preview that floats beside the settings window when Layout or Theme is clicked */
+  .pv { position:absolute; z-index:8; width:484px; background:var(--surf); color:var(--tx); border:1px solid var(--bd); border-radius:12px; box-shadow:0 18px 48px rgba(2,32,64,.30);
+    padding:10px; opacity:0; transform:translateX(8px); transition:opacity .18s, transform .18s; pointer-events:none; }
+  .pv.show { opacity:1; transform:none; pointer-events:auto; }
+  .pv .stage { background:var(--desk); border-radius:8px; padding:16px 10px; display:flex; justify-content:center; }
+  .pv .bub { position:static; }
+  .pv .bub .row, .pv .bub .grab { cursor:default; }
+  .pv p { margin:9px 4px 2px; font-size:12.5px; line-height:1.45; color:var(--mut); }
+  .pv p b { color:var(--tx); }
+  .pv .tip { position:absolute; right:-7px; width:12px; height:12px; background:var(--surf); border-right:1px solid var(--bd); border-top:1px solid var(--bd); transform:rotate(45deg); }
+</style>
+</head>
+<body>
+<main>
+  <h1>AI Inline Rewrite: try the AIR key</h1>
+  <p class="sub">A browser copy of the app's flow, so you can feel the keys before the real app gets them. The versions come from your local Ollama (qwen2.5:7b, the same prompts as the app) when it answers; otherwise only the two samples work. In the real app the same keys work in any Windows app; here they only work on this page.</p>
+  <div class="bar">
+    <button data-sample="pt">Type the Portuguese sample</button>
+    <button data-sample="en">Type the English sample with mistakes</button>
+    <button id="clear">Clear the message</button>
+    <span class="engine" id="engine">Checking Ollama…</span>
+  </div>
+  <div class="layout">
+    <div class="desk" id="desk">
+      <div class="win">
+        <div class="wbar"><span>New message</span><span>─▢✕</span></div>
+        <div class="whead"><label>To</label><span>team@example.com</span></div>
+        <div class="whead"><label>Subject</label><span>Next steps</span></div>
+        <textarea id="field" spellcheck="false" placeholder="Type here, in Portuguese or English"></textarea>
+      </div>
+      <div class="bub" id="bub" hidden></div>
+      <div class="pop" id="pop" hidden></div>
+      <div class="pv" id="pv"></div>
+      <div class="toast" id="toast"></div>
+      <div class="task"><span class="tray" id="tray"></span><span id="clock"></span></div>
+    </div>
+    <aside>
+      <h2>How to try</h2>
+      <ol>
+        <li>Type a sentence in the message, in Portuguese or English, or use a sample button.</li>
+        <li>Stop typing: after a short pause AIR writes one version per tone.</li>
+        <li><b><span class="kname">Tap Right Ctrl</span></b> (press and release it alone): pick mode, the first version is selected.</li>
+        <li>Move with <kbd>↓</kbd> <kbd>↑</kbd> (<kbd>↑</kbd> on the first goes to the last) and press <kbd>Enter</kbd>; or press <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>; or click a row. <kbd>Esc</kbd> closes. Any other key just types. Pick mode closes after 4 s without a key.</li>
+        <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> after applying brings your text back.</li>
+        <li>The arrow beside the gear is blue while the bubble follows the text cursor. Drag the bubble by its bar and it stays there, with the arrow grey; click the arrow to switch between the two. The gear, or a click on the tray icon, opens the settings: on and off, the tones (check, order with the arrows or by dragging), layout, theme and the AIR key. With AIR off, the AIR key turns it on.</li>
+      </ol>
+      <h2>What AIR did</h2>
+      <ul class="log" id="log"></ul>
+    </aside>
+  </div>
+</main>
+
+<script>
+// ---------- assets: Q icon (Sky, or a flat color) and small glyphs ----------
+let n = 0;
+const uid = () => 'u' + (n++);
+const qIcon = (size, flat) => {
+  const g = uid(), m = uid(), fill = flat || `url(#${g})`;
+  return `<svg viewBox="0 0 64 64" width="${size}" height="${size}" style="flex:none"><defs><linearGradient id="${g}" gradientUnits="userSpaceOnUse" x1="6" y1="4" x2="58" y2="60"><stop offset="0" stop-color="#7DD3FC"/><stop offset="1" stop-color="#0284C7"/></linearGradient>
+    <mask id="${m}" maskUnits="userSpaceOnUse" x="-10" y="-10" width="84" height="84"><rect x="-10" y="-10" width="84" height="84" fill="white"/><path d="M32 35 V53" stroke="black" stroke-width="2.6" stroke-linecap="round"/><circle cx="32" cy="31" r="3.6" fill="black"/></mask></defs>
+    <g transform="rotate(40 32 31)"><path d="M32 56 L21 33 Q21 15 32 6 Q43 15 43 33 Z" fill="${fill}" mask="url(#${m})"/></g>
+    <path d="M10 57 q7 -6 14 0 t14 0 t14 0" stroke="${fill}" stroke-width="3.8" fill="none" stroke-linecap="round"/></svg>`;
+};
+const gearPath = (() => {
+  const pts = [], R = 10, r = 7.4;
+  for (let k = 0; k < 8; k++) { const c = k * Math.PI / 4; pts.push([c - .38, r], [c - .2, R], [c + .2, R], [c + .38, r]); }
+  return pts.map(([a, rad], i) => `${i ? 'L' : 'M'}${(12 + rad * Math.cos(a)).toFixed(2)} ${(12 + rad * Math.sin(a)).toFixed(2)}`).join(' ') + ' Z M15 12 A3 3 0 1 0 9 12 A3 3 0 1 0 15 12 Z';
+})();
+const gear = `<button class="gear" data-gear title="Settings"><svg viewBox="0 0 24 24" width="16" height="16"><path d="${gearPath}" fill="currentColor" fill-rule="evenodd"/></svg></button>`;
+// Follow the text cursor: a navigation arrow beside the gear (and on the left of the option in the settings),
+// filled Sky while the bubble follows, a grey outline once it stays where it was left
+const NAV = 'M20 4 4 10.6l6.9 2.5 2.5 6.9z';
+const navIcons = (s = 16) => ['s-on', 's-off'].map(c => `<svg class="${c}" viewBox="0 0 24 24" width="${s}" height="${s}"><path d="${NAV}" fill="${c === 's-on' ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/></svg>`).join('');
+const folTitle = on => on ? 'Follows the text cursor · click to keep the bubble here' : 'Stays here · click to follow the text cursor';
+const followBtn = on => `<button class="gear fol${on ? ' on' : ''}" data-follow title="${folTitle(on)}">${navIcons()}</button>`;
+const chev = up => `<svg width="10" height="10" viewBox="0 0 10 10"><path d="${up ? 'M2 6.5 5 3.5l3 3' : 'M2 3.5 5 6.5l3-3'}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const gripSvg = '<svg width="10" height="16" viewBox="0 0 10 16"><g fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></g></svg>';
+const xSvg = '<svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+
+// ---------- the app's prompts, as the mockup was tried with them ----------
+const NO_PUNCT = ' Do not add a period or any final punctuation the user did not already type. Keep the first letter in the same case the user typed it.';
+const TRANSLATE = ' If the sentence is written in Portuguese (or any language other than English), translate it into natural English in this same register instead of copying or leaving it unchanged.';
+const TONES = {
+  Casual:   { desc:'Fixes real mistakes and keeps your casual style; gonna and wanna stay.',
+    tpl:'You are an English writing coach for a learner writing casually. Fix real mistakes: spelling, verb tense and agreement, word order, wrong prepositions, missing apostrophes in contractions (e.g. dont -> don\'t, im -> I\'m), and capitalize the word I. BUT keep the informal casual style: never change acceptable slang or casual contractions like wanna, gonna, gotta, kinda, gimme - those are correct. Do not make it more formal, do not rephrase, do not upgrade vocabulary. If there are no real mistakes, repeat it unchanged.' + TRANSLATE + NO_PUNCT + ' Output ONLY the sentence.\n\nSentence: {0}\nCorrected:' },
+  Concise:  { desc:'Correct, formal English, short and to the point.',
+    tpl:'You are an English writing coach. Rewrite the sentence in correct, standard formal English, kept concise and to the point. Fix all grammar and spelling, and expand casual contractions and slang to their proper form (wanna -> want to, gonna -> going to, gotta -> have to, kinda -> kind of, gimme -> give me). Keep the original meaning and do not pad it with extra words.' + TRANSLATE + NO_PUNCT + ' Output ONLY the corrected sentence.\n\nSentence: {0}\nFormal:' },
+  Polished: { desc:'Formal, with fuller phrasing in plain everyday words.',
+    tpl:'You are an English writing coach. Rewrite the sentence in correct, natural formal English with slightly fuller phrasing than a terse version - you may add a connecting word or a few clarifying words - but use plain, everyday vocabulary. Do NOT use ornate, pompous, archaic or literary words. Expand casual contractions and slang. Keep the exact original meaning.' + TRANSLATE + NO_PUNCT + ' Output ONLY the corrected sentence.\n\nSentence: {0}\nFormal:' },
+  Ornate:   { desc:'Refined, literary vocabulary for very formal text.',
+    tpl:'You are an English writing coach. Rewrite the sentence in sophisticated, eloquent formal English using rich, refined vocabulary and a polished, literary tone, the way it would read in high-end professional or academic prose. Keep the exact original meaning and never invent new facts.' + TRANSLATE + NO_PUNCT + ' Output ONLY the corrected sentence.\n\nSentence: {0}\nRewritten:' },
+};
+const SAMPLES = {
+  pt: { text:'acho que a gente precisa conversar sobre o prazo amanhã', out:{ Casual:'I think we need to talk about the deadline tomorrow', Concise:'We need to discuss the deadline tomorrow', Polished:'I believe we should discuss the deadline tomorrow', Ornate:'I believe it would be prudent for us to discuss the deadline tomorrow' } },
+  en: { text:'i dont think we can finish this until friday', out:{ Casual:'I don\'t think we can finish this by Friday', Concise:'We can\'t finish this by Friday', Polished:'I do not believe we can finish this by Friday', Ornate:'I am not persuaded that we shall be able to complete this by Friday' } },
+};
+const OLLAMA = 'http://localhost:11434', MODEL = 'qwen2.5:7b';
+const KEYS = { ControlRight:'Tap Right Ctrl', ShiftRight:'Tap Right Shift', Pause:'Pause', ScrollLock:'Scroll Lock', Insert:'Insert' };
+const TAP_KEYS = new Set(['ControlRight', 'ShiftRight']);
+const PICK_MS = 4000, DEBOUNCE_MS = 700;
+
+// ---------- state ----------
+const st = { on:true, order:['Casual', 'Concise', 'Polished', 'Ornate'], tones:{ Casual:true, Concise:true, Polished:true, Ornate:false },
+  style:'A', theme:'follow', key:'ControlRight', follow:true, pos:null,
+  src:'', isPt:false, rows:[], mode:'idle', applied:'', pick:false, sel:0, pickAt:0, engine:'canned' };
+const $ = id => document.getElementById(id);
+const desk = $('desk'), field = $('field'), bub = $('bub'), pop = $('pop');
+let ctrl = null, debounce = 0, pickTimer = 0, tapAt = 0, applying = false, rafPending = false, typing = 0;
+
+// ---------- helpers ----------
+const esc = s => s.replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+const keyName = () => KEYS[st.key];
+const enabledTones = () => st.order.filter(t => st.tones[t]);
+const log = msg => {
+  const li = document.createElement('li'), t = new Date().toTimeString().slice(0, 8);
+  li.innerHTML = `<time>${t}</time>${msg}`;
+  $('log').prepend(li);
+  while ($('log').children.length > 40) $('log').lastChild.remove();
+};
+const looksPt = s => /[ãõçáéíóúâêôà]/i.test(s) || /\b(que|não|nao|eu|você|voce|gente|precisa|preciso|para|pra|com|uma|isso|está|amanhã|amanha|hoje|vamos|acho|obrigado|tudo|sobre|prazo|reunião|reuniao|depois|agora)\b/i.test(s);
+const matchPunct = (orig, text) => {
+  const isEnd = c => c === '.' || c === '!' || c === '?';
+  const o = orig.trimEnd(), want = o && isEnd(o.at(-1)) ? o.at(-1) : '';
+  let t = text.trim().replace(/^["“]|["”]$/g, '').trimEnd(), end = t.length;
+  while (end > 0 && isEnd(t[end - 1])) end--;
+  return matchStartCase(orig, t.slice(0, end) + want);
+};
+// Mirror the case of the user's first letter, like the final punctuation. Kept upper anyway:
+// the pronoun I, words with more capitals (AIR, iPhone) and day or month names.
+const KEEP_UPPER = /^(I\b|(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|January|February|March|April|June|July|August|September|October|November|December)\b)/;
+const matchStartCase = (orig, text) => {
+  const oc = orig.match(/\p{L}/u)?.[0], i = text.search(/\p{L}/u);
+  if (!oc || i < 0) return text;
+  const rest = text.slice(i), word = rest.split(/\s/)[0];
+  const head = oc === oc.toUpperCase() ? text[i].toUpperCase()
+    : (KEEP_UPPER.test(rest) || /\p{Lu}/u.test(word.slice(1)) ? text[i] : text[i].toLowerCase());
+  return text.slice(0, i) + head + text.slice(i + 1);
+};
+const diffHtml = (a, b) => {
+  const A = a.split(/\s+/).filter(Boolean), B = b.split(/\s+/).filter(Boolean), nA = A.length, nB = B.length;
+  const L = Array.from({ length:nA + 1 }, () => new Array(nB + 1).fill(0));
+  for (let i = nA - 1; i >= 0; i--) for (let j = nB - 1; j >= 0; j--) L[i][j] = A[i] === B[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  const out = []; let i = 0, j = 0, del = [], ins = [];
+  const flush = () => { if (del.length) out.push(`<del>${esc(del.join(' '))}</del>`); if (ins.length) out.push(`<ins>${esc(ins.join(' '))}</ins>`); del = []; ins = []; };
+  while (i < nA || j < nB) {
+    if (i < nA && j < nB && A[i] === B[j]) { flush(); out.push(esc(A[i])); i++; j++; }
+    else if (i < nA && (j === nB || L[i + 1][j] >= L[i][j + 1])) del.push(A[i++]);
+    else ins.push(B[j++]);
+  }
+  flush();
+  return out.join(' ');
+};
+
+// ---------- theme ----------
+const mq = matchMedia('(prefers-color-scheme: dark)');
+const applyTheme = () => { document.documentElement.dataset.theme = st.theme === 'follow' ? (mq.matches ? 'dark' : 'light') : st.theme; };
+mq.addEventListener('change', applyTheme);
+
+// ---------- caret position inside the textarea ----------
+const caretXY = () => {
+  const cs = getComputedStyle(field), div = document.createElement('div');
+  for (const p of ['boxSizing', 'width', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderLeftWidth', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'wordSpacing', 'tabSize'])
+    div.style[p] = cs[p];
+  Object.assign(div.style, { position:'absolute', visibility:'hidden', whiteSpace:'pre-wrap', overflowWrap:'break-word', top:'0', left:'-9999px' });
+  div.textContent = field.value.slice(0, field.selectionEnd);
+  const span = document.createElement('span');
+  span.textContent = field.value.slice(field.selectionEnd) || '.';
+  div.appendChild(span);
+  document.body.appendChild(div);
+  const r = { x:span.offsetLeft, y:span.offsetTop - field.scrollTop, h:parseFloat(cs.lineHeight) || 22 };
+  div.remove();
+  return r;
+};
+const place = () => {
+  if (bub.hidden) return;
+  const d = desk.getBoundingClientRect(), maxX = d.width - bub.offsetWidth - 8, maxY = d.height - 48 - bub.offsetHeight;
+  let x, y;
+  if (!st.follow && st.pos) ({ x, y } = st.pos);
+  else {
+    const f = field.getBoundingClientRect(), c = caretXY();
+    x = f.left - d.left + c.x - 18;
+    y = f.top - d.top + c.y + c.h + 10;
+    if (y > maxY) y = f.top - d.top + c.y - bub.offsetHeight - 8;
+  }
+  bub.style.left = Math.max(8, Math.min(x, maxX)) + 'px';
+  bub.style.top = Math.max(8, Math.min(y, maxY)) + 'px';
+};
+
+// ---------- bubble rendering ----------
+const statusHtml = () => {
+  const n = st.rows.length;
+  if (st.pick) return `<kbd>↑</kbd><kbd>↓</kbd> <kbd>Enter</kbd> · <kbd>1</kbd>${n > 1 ? ` to <kbd>${n}</kbd>` : ''} · <kbd>Esc</kbd>`;
+  if (st.mode === 'thinking') return 'Writing…';
+  if (st.mode === 'applied') return `Applied ${st.applied} · Ctrl+Z undoes it`;
+  if (st.mode === 'error') return 'Ollama is not answering';
+  if (st.mode === 'ready') {
+    if (st.isPt) return 'Translated from Portuguese';
+    return st.rows.every(r => r.text === st.src) ? 'Looks right already' : 'English, corrected';
+  }
+  if (st.mode === 'typing') return 'Waiting for a pause';
+  return 'Ready';
+};
+const rowText = r => (!r.done || r.err || st.isPt) ? esc(r.text) : diffHtml(st.src, r.text);
+const bubbleHtml = (style, rows, status, { pick = false, sel = 0, text = rowText, hint = 'Type in Portuguese or English.', elapsed = 0, follow = st.follow } = {}) => {
+  const timer = `<div class="timer"><i style="animation-delay:-${elapsed}ms"></i></div>`;
+  const tools = `<span class="tools">${followBtn(follow)}${gear}</span>`;
+  const cls = (r, i) => `row${r.done ? '' : ' wait'}${pick && i === sel ? ' sel' : ''}`;
+  if (style === 'A') return { cls:'bub A' + (pick ? ' pick' : ''),
+    html:`<div class="hdr grab" data-drag>${qIcon(16)}<b>AIR</b><span class="st">· ${status}</span>${tools}</div>`
+      + (rows.length ? rows.map((r, i) => `<div class="${cls(r, i)}" data-i="${i}"><span class="key">${i + 1}</span><div><div class="tone">${r.tone}</div><div class="txt">${text(r)}</div></div></div>`).join('')
+        : `<div class="row hint"><div class="txt">${hint}</div></div>`) + timer };
+  return { cls:'bub B' + (pick ? ' pick' : ''),
+    html:(rows.length ? rows.map((r, i) => `<div class="${cls(r, i)}" data-i="${i}"><span class="key">${i + 1}</span><span class="txt">${text(r)}</span><span class="tone">${r.tone}</span></div>`).join('')
+        : `<div class="row hint"><span class="txt">${hint}</span></div>`)
+      + `<div class="foot grab" data-drag>${qIcon(12)}<b>AIR</b><span class="st">· ${status}</span>${tools}</div>` + timer };
+};
+const render = () => {
+  bub.hidden = !st.on;
+  if (!st.on) return;
+  const b = bubbleHtml(st.style, st.rows, statusHtml(), { pick:st.pick, sel:st.sel,
+    elapsed:st.pick ? Math.min(PICK_MS, performance.now() - st.pickAt) : 0,
+    hint:st.mode === 'applied' ? 'Keep typing; AIR waits for the next pause.' : 'Type in Portuguese or English.' });
+  bub.className = b.cls;
+  bub.innerHTML = b.html;
+  place();
+};
+const renderSoon = () => { if (rafPending) return; rafPending = true; requestAnimationFrame(() => { rafPending = false; render(); }); };
+
+// ---------- the model ----------
+async function generate(prompt, signal, onDelta) {
+  const r = await fetch(OLLAMA + '/api/generate', { method:'POST', headers:{ 'Content-Type':'application/json' }, signal,
+    body:JSON.stringify({ model:MODEL, prompt, stream:true, keep_alive:'30m', options:{ temperature:0, num_predict:256 } }) });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const rd = r.body.getReader(), dec = new TextDecoder();
+  let buf = '', acc = '';
+  for (;;) {
+    const { value, done } = await rd.read();
+    if (done) return acc;
+    buf += dec.decode(value, { stream:true });
+    let nl;
+    while ((nl = buf.indexOf('\n')) >= 0) {
+      const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+      if (!line) continue;
+      const j = JSON.parse(line);
+      if (j.response) { acc += j.response; onDelta(acc); }
+      if (j.done) return acc;
+    }
+  }
+}
+const cannedFor = text => Object.values(SAMPLES).find(s => s.text === text.trim());
+const sleep = (ms, signal) => new Promise((res, rej) => { const t = setTimeout(res, ms); signal.addEventListener('abort', () => { clearTimeout(t); rej(new DOMException('aborted', 'AbortError')); }); });
+
+async function rewrite(text) {
+  ctrl?.abort();
+  const my = ctrl = new AbortController();
+  const tones = enabledTones();
+  st.src = text; st.isPt = looksPt(text); st.mode = 'thinking';
+  st.rows = tones.map(t => ({ tone:t, text:'', done:false }));
+  render();
+  const t0 = performance.now();
+  const canned = cannedFor(text);
+  await Promise.all(st.rows.map(async row => {
+    try {
+      if (st.engine === 'live') {
+        const out = await generate(TONES[row.tone].tpl.replace('{0}', text), my.signal, acc => { row.text = matchPunct(text, acc); renderSoon(); });
+        row.text = matchPunct(text, out);
+      } else if (canned) {
+        const full = matchPunct(text, canned.out[row.tone]);
+        for (let k = 1; k <= full.length; k += 3) { await sleep(18, my.signal); row.text = full.slice(0, k); renderSoon(); }
+        row.text = full;
+      } else throw new Error('Ollama is not reachable; only the samples work');
+    } catch (e) {
+      if (my.signal.aborted) return;
+      row.text = '(' + e.message + ')'; row.err = true;
+    }
+    row.done = true; renderSoon();
+  }));
+  if (my.signal.aborted) return;
+  st.mode = st.rows.every(r => r.err) ? 'error' : 'ready';
+  render();
+  log(`Pause detected: ${st.rows.length} versions written in ${((performance.now() - t0) / 1000).toFixed(1)} s (${st.isPt ? 'Portuguese, translated' : 'English, corrected'})`);
+}
+
+// ---------- pick mode ----------
+const armPickTimer = () => {
+  st.pickAt = performance.now();
+  clearTimeout(pickTimer);
+  pickTimer = setTimeout(() => exitPick('4 s without a key: pick mode closed'), PICK_MS);
+};
+const enterPick = () => { st.pick = true; st.sel = 0; armPickTimer(); render(); };
+const exitPick = why => { if (!st.pick) return; st.pick = false; clearTimeout(pickTimer); if (why) log(why); render(); };
+const moveSel = step => {
+  const n = st.rows.length;
+  st.sel = (st.sel + step + n) % n;
+  armPickTimer();
+  render();
+};
+const shake = () => { bub.classList.remove('shake'); void bub.offsetWidth; bub.classList.add('shake'); };
+const airKey = () => {
+  if (!st.on) { setOn(true, `${keyName()}: AIR turned on`); return; }
+  if (st.pick) { exitPick(`${keyName()} again: pick mode closed`); return; }
+  if (!st.rows.length) { log(`${keyName()}: nothing to pick yet`); shake(); return; }
+  enterPick();
+  log(`${keyName()}: pick mode, ${st.rows[0].tone} selected`);
+};
+const apply = (i, via) => {
+  const r = st.rows[i];
+  if (!r) { log(`${via}: there is no version ${i + 1}`); shake(); return; }
+  if (!r.done || r.err) { log(`${via}: ${r.tone} is ${r.err ? 'not available' : 'still being written'}`); shake(); return; }
+  clearTimeout(pickTimer);
+  field.focus();
+  field.select();
+  applying = true;
+  document.execCommand('insertText', false, r.text);
+  applying = false;
+  field.classList.remove('flash'); void field.offsetWidth; field.classList.add('flash');
+  st.pick = false; st.rows = []; st.mode = 'applied'; st.applied = r.tone;
+  log(`${via}: applied ${r.tone}`);
+  render();
+};
+const dismiss = via => { ctrl?.abort(); clearTimeout(pickTimer); st.pick = false; st.rows = []; st.mode = 'idle'; log(`${via}: suggestions closed`); render(); };
+const setOn = (on, why) => {
+  st.on = on;
+  if (!on) { ctrl?.abort(); clearTimeout(debounce); clearTimeout(pickTimer); st.pick = false; st.rows = []; st.mode = 'idle'; }
+  $('tray').classList.toggle('off', !on);
+  $('tray').title = `AIR · ${on ? 'on' : 'off'}`;
+  toast(on ? 'AIR is on' : 'AIR is off');
+  log(why);
+  render();
+  if (!pop.hidden) renderPop();
+  if (on) field.focus();
+};
+let toastT = 0;
+const toast = msg => { const t = $('toast'); t.innerHTML = qIcon(16) + msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800); };
+
+// ---------- keyboard: what the hook will do ----------
+const digitOf = code => { const m = /^(?:Digit|Numpad)([1-9])$/.exec(code); return m ? +m[1] : 0; };
+const MODS = new Set(['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight', 'CapsLock']);
+document.addEventListener('keydown', e => {
+  if (!pop.hidden && e.code === 'Escape') { closePop(); return; }
+  if (e.code === st.key) {
+    if (e.repeat) return;
+    if (TAP_KEYS.has(st.key)) { tapAt = performance.now(); return; }
+    e.preventDefault(); airKey(); return;
+  }
+  tapAt = 0;
+  if (!st.pick || !st.on) return;
+  const d = digitOf(e.code);
+  if (d) { e.preventDefault(); if (!e.repeat) apply(d - 1, `Key ${d}`); return; }
+  if (e.code === 'ArrowDown' || e.code === 'ArrowUp') { e.preventDefault(); moveSel(e.code === 'ArrowDown' ? 1 : -1); return; }
+  if (e.code === 'Enter' || e.code === 'NumpadEnter') { e.preventDefault(); apply(st.sel, 'Enter'); return; }
+  if (e.code === 'Escape') { e.preventDefault(); dismiss('Esc'); return; }
+  if (MODS.has(e.code)) return;
+  exitPick(`"${e.key.length === 1 ? e.key : e.code}" is not a pick key: pick mode closed, the key went through`);
+}, true);
+document.addEventListener('keyup', e => {
+  if (e.code !== st.key || !TAP_KEYS.has(st.key)) return;
+  const tapped = tapAt && performance.now() - tapAt < 600;
+  tapAt = 0;
+  if (tapped) airKey();
+}, true);
+document.addEventListener('mousedown', () => { tapAt = 0; }, true);
+
+// ---------- typing ----------
+field.addEventListener('input', () => {
+  if (applying || !st.on) return;
+  ctrl?.abort(); clearTimeout(debounce);
+  if (st.pick) exitPick();
+  st.rows = []; st.mode = field.value.trim() ? 'typing' : 'idle';
+  render();
+  debounce = setTimeout(() => { const t = field.value.trim(); if (t) rewrite(t); }, DEBOUNCE_MS);
+});
+field.addEventListener('click', () => { if (st.follow) place(); });
+field.addEventListener('keyup', e => { if (st.follow && e.key.startsWith('Arrow') && !st.pick) place(); });
+
+// ---------- mouse on the bubble: click a row, drag the bar, gear ----------
+let drag = null;
+const setFollow = (on, why) => {
+  if (st.follow === on) return;
+  if (!on && !st.pos && bub.style.left) st.pos = { x:parseFloat(bub.style.left), y:parseFloat(bub.style.top) };   // stays where it is
+  st.follow = on;
+  if (on) st.pos = null;
+  log(why);
+  // update in place, so the arrow and the switch animate
+  bub.querySelectorAll('[data-follow]').forEach(b => { b.classList.toggle('on', on); b.title = folTitle(on); });
+  const sw = pop.querySelector('#follow');
+  if (sw) { sw.checked = on; sw.parentElement.querySelector('span').textContent = on ? 'On' : 'Off'; pop.querySelector('.lic').classList.toggle('on', on); }
+  if (on) { bub.classList.add('glide'); setTimeout(() => bub.classList.remove('glide'), 300); }   // slides back to the text cursor
+  place();
+};
+bub.addEventListener('mousedown', e => {
+  if (e.target.closest('[data-gear], [data-follow]')) { e.preventDefault(); return; }
+  const handle = e.target.closest('[data-drag]');
+  if (handle) {
+    e.preventDefault();
+    const b = bub.getBoundingClientRect();
+    drag = { dx:e.clientX - b.left, dy:e.clientY - b.top, moved:false };
+    return;
+  }
+  if (e.target.closest('.row')) e.preventDefault();   // keep the caret in the message
+});
+document.addEventListener('mousemove', e => {
+  if (!drag) return;
+  const d = desk.getBoundingClientRect();
+  drag.moved = true;
+  st.pos = { x:e.clientX - d.left - drag.dx, y:e.clientY - d.top - drag.dy };
+  if (st.follow) setFollow(false, 'Bubble dragged: it stays where you leave it; the arrow beside the gear turns grey, click it to follow again');
+  else place();
+});
+document.addEventListener('mouseup', () => { drag = null; });
+bub.addEventListener('click', e => {
+  if (e.target.closest('[data-gear]')) { togglePop(); return; }
+  if (e.target.closest('[data-follow]')) { setFollow(!st.follow, st.follow ? 'Arrow: the bubble stays here' : 'Arrow: the bubble follows the text cursor again'); return; }
+  const r = e.target.closest('.row[data-i]');
+  if (r) apply(+r.dataset.i, 'Click');
+});
+
+// ---------- settings window ----------
+const radio = (name, val, label, cur) => `<label><input type="radio" name="${name}" value="${val}"${cur === val ? ' checked' : ''}>${label}</label>`;
+const renderPop = () => {
+  hidePreview();
+  const body = pop.querySelector('.pb'), scroll = body ? body.scrollTop : 0;
+  const on = enabledTones();
+  pop.innerHTML = `
+    <div class="ph">${qIcon(18)}<div class="ttl"><b>AI Inline Rewrite</b><span class="dot">·</span><small>Settings</small></div>
+      <button class="x" id="closepop" title="Close">${xSvg}</button></div>
+    <div class="pb">
+      <section><div class="line"><div><h3>AIR</h3><p class="help">Off: AIR stops reading what you type. The AIR key turns it back on.</p></div>
+        <label class="sw"><input type="checkbox" id="onsw"${st.on ? ' checked' : ''}><i></i><span>${st.on ? 'On' : 'Off'}</span></label></div></section>
+      <section><h3>Tones</h3><p class="help">Each checked tone is one version in the bubble, in this order; its number is its key. Reorder with the arrows or by dragging.</p>
+        <ul class="tones">${st.order.map((t, i) => `
+          <li class="ti${st.tones[t] ? '' : ' dis'}" draggable="true" data-name="${t}">
+            <span class="grip" title="Drag to reorder">${gripSvg}</span>
+            <label class="chk" title="${st.tones[t] ? 'Hide' : 'Show'} ${t}"><input type="checkbox" data-tone="${t}"${st.tones[t] ? ' checked' : ''}><i></i></label>
+            <span class="num">${st.tones[t] ? on.indexOf(t) + 1 : '·'}</span>
+            <div class="tinfo"><b>${t}</b><small>${TONES[t].desc}</small></div>
+            <div class="mv"><button data-move="-1" data-name="${t}" title="Move up"${i === 0 ? ' disabled' : ''}>${chev(true)}</button><button data-move="1" data-name="${t}" title="Move down"${i === st.order.length - 1 ? ' disabled' : ''}>${chev(false)}</button></div>
+          </li>`).join('')}</ul></section>
+      <section data-sec="style"><h3>Layout</h3>
+        <div class="seg">${radio('style', 'A', 'Card', st.style)}${radio('style', 'B', 'Compact', st.style)}</div></section>
+      <section data-sec="theme"><h3>Theme</h3>
+        <div class="seg">${radio('theme', 'follow', 'Windows', st.theme)}${radio('theme', 'light', 'Light', st.theme)}${radio('theme', 'dark', 'Dark', st.theme)}</div></section>
+      <section><h3>AIR key</h3><p class="help">Opens pick mode: then ↑ ↓ and Enter, a number, or Esc. A tap is a press and release with no other key.</p>
+        <select id="keysel">${Object.entries(KEYS).map(([k, v]) => `<option value="${k}"${k === st.key ? ' selected' : ''}>${v}</option>`).join('')}</select></section>
+      <section><div class="line"><span class="lic fol${st.follow ? ' on' : ''}">${navIcons(18)}</span><div><h3>Follow the text cursor</h3><p class="help">Off: the bubble stays where you leave it. The same arrow beside the gear switches it.</p></div>
+        <label class="sw"><input type="checkbox" id="follow"${st.follow ? ' checked' : ''}><i></i><span>${st.follow ? 'On' : 'Off'}</span></label></div></section>
+    </div>`;
+  pop.querySelector('.pb').scrollTop = scroll;
+};
+const openPop = () => { renderPop(); pop.hidden = false; };
+const closePop = () => { hidePreview(); if (pop.hidden) return; pop.hidden = true; if (st.on) field.focus(); };
+
+// Preview of a Layout or Theme choice, floating beside the settings window.
+const pv = $('pv');
+let pvTimer = 0, pvSec = null;
+const effTheme = th => th === 'follow' ? (mq.matches ? 'dark' : 'light') : th;
+const PV_TEXT = {
+  style:{ A:() => '<b>Card</b> · each version under its tone name, and the bar with AIR, the status and the gear on top. The easiest to read.',
+          B:() => '<b>Compact</b> · one line per version with the tone on the right, and the bar at the bottom. Covers less of the screen.' },
+  theme:{ follow:() => `<b>Windows</b> · follows the Windows mode, ${mq.matches ? 'dark' : 'light'} right now, and changes with it.`,
+          light:() => '<b>Light</b> · always light, whatever mode Windows is in.',
+          dark:() => '<b>Dark</b> · always dark, whatever mode Windows is in.' } };
+const hidePreview = () => { clearTimeout(pvTimer); pvTimer = 0; pvSec = null; pv.classList.remove('show'); };
+const armHide = ms => { clearTimeout(pvTimer); pvTimer = setTimeout(hidePreview, ms); };
+const showPreview = (kind, value) => {
+  const sec = pop.querySelector(`[data-sec="${kind}"]`);
+  if (!sec || pop.hidden) return;
+  const style = kind === 'style' ? value : st.style, theme = effTheme(kind === 'theme' ? value : st.theme);
+  const rows = enabledTones().map(t => ({ tone:t, text:matchPunct(SAMPLES.pt.text, SAMPLES.pt.out[t]), done:true }));
+  const b = bubbleHtml(style, rows, 'Translated from Portuguese', { text:r => esc(r.text) });
+  pv.innerHTML = `<div class="stage th-${theme}"><div class="${b.cls}">${b.html}</div></div><p>${PV_TEXT[kind][value]()}</p><i class="tip"></i>`;
+  const d = desk.getBoundingClientRect(), p = pop.getBoundingClientRect(), s = sec.getBoundingClientRect();
+  const h = pv.offsetHeight, cy = s.top + s.height / 2 - d.top;
+  const top = Math.max(8, Math.min(cy - h / 2, d.height - 48 - h));
+  pv.style.top = top + 'px';
+  pv.style.left = (p.left - d.left - pv.offsetWidth - 12) + 'px';
+  pv.querySelector('.tip').style.top = Math.max(12, Math.min(cy - top - 6, h - 24)) + 'px';
+  pv.classList.add('show');
+  pvSec = sec;
+  pvLeaving = false;
+  armHide(5000);   // shown by the keyboard: goes away on its own
+};
+let pvLeaving = false;
+document.addEventListener('mousemove', e => {
+  if (!pvSec) return;
+  if (pvSec.contains(e.target) || pv.contains(e.target)) { clearTimeout(pvTimer); pvTimer = 0; pvLeaving = false; }
+  else if (!pvLeaving) { pvLeaving = true; armHide(1200); }
+});
+const togglePop = () => (pop.hidden ? openPop() : closePop());
+const setOrder = (order, how) => {
+  st.order = order;
+  const rank = Object.fromEntries(order.map((t, i) => [t, i]));
+  st.rows.sort((a, b) => rank[a.tone] - rank[b.tone]);
+  st.sel = 0;
+  log(`Settings: tones ${how}, now ${enabledTones().join(' · ')}`);
+  render();
+  renderPop();
+};
+pop.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.tone) {
+    st.tones[t.dataset.tone] = t.checked;
+    if (!enabledTones().length) { st.tones[t.dataset.tone] = true; t.checked = true; return; }
+    log(`Settings: ${t.dataset.tone} ${t.checked ? 'on' : 'off'}`);
+    renderPop();
+    if (st.src && st.rows.length) rewrite(st.src); else render();
+  } else if (t.name === 'style') { st.style = t.value; log(`Settings: layout ${t.value === 'A' ? 'Card' : 'Compact'}`); render(); showPreview('style', t.value); }
+  else if (t.name === 'theme') { st.theme = t.value; applyTheme(); log(`Settings: theme ${t.value === 'follow' ? 'follows Windows' : t.value}`); showPreview('theme', t.value); }
+  else if (t.id === 'keysel') { st.key = t.value; document.querySelectorAll('.kname').forEach(k => k.textContent = keyName()); log(`Settings: the AIR key is now ${keyName()}`); }
+  else if (t.id === 'follow') setFollow(t.checked, `Settings: Follow the text cursor ${t.checked ? 'on' : 'off'}`);
+  else if (t.id === 'onsw') setOn(t.checked, `Settings: AIR turned ${t.checked ? 'on' : 'off'}`);
+});
+pop.addEventListener('click', e => {
+  if (e.target.closest('#closepop')) { closePop(); return; }
+  const seg = e.target.closest('.seg input');
+  if (seg) { showPreview(seg.name, seg.value); return; }
+  const mv = e.target.closest('[data-move]');
+  if (mv && !mv.disabled) {
+    const o = [...st.order], i = o.indexOf(mv.dataset.name), j = i + +mv.dataset.move;
+    [o[i], o[j]] = [o[j], o[i]];
+    setOrder(o, `reordered (${mv.dataset.name} ${+mv.dataset.move < 0 ? 'up' : 'down'})`);
+  }
+});
+let dragTone = null;
+const clearMarks = () => pop.querySelectorAll('.drop-before, .drop-after').forEach(el => el.classList.remove('drop-before', 'drop-after'));
+pop.addEventListener('dragstart', e => {
+  const li = e.target.closest('.ti'); if (!li) return;
+  dragTone = li.dataset.name; li.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', dragTone);
+});
+pop.addEventListener('dragover', e => {
+  const li = e.target.closest('.ti'); if (!li || !dragTone) return;
+  e.preventDefault(); clearMarks();
+  const r = li.getBoundingClientRect();
+  li.classList.add(e.clientY > r.top + r.height / 2 ? 'drop-after' : 'drop-before');
+});
+pop.addEventListener('drop', e => {
+  const li = e.target.closest('.ti'); if (!li || !dragTone) return;
+  e.preventDefault();
+  const r = li.getBoundingClientRect(), after = e.clientY > r.top + r.height / 2, target = li.dataset.name, moved = dragTone;
+  dragTone = null;
+  if (target === moved) { renderPop(); return; }
+  const o = st.order.filter(t => t !== moved);
+  o.splice(o.indexOf(target) + (after ? 1 : 0), 0, moved);
+  setOrder(o, `reordered (${moved} dragged)`);
+});
+pop.addEventListener('dragend', () => { if (dragTone) { dragTone = null; renderPop(); } clearMarks(); });
+document.addEventListener('mousedown', e => {
+  if (!pop.hidden && !pop.contains(e.target) && !pv.contains(e.target) && !e.target.closest('[data-gear], [data-follow]') && !e.target.closest('#tray')) closePop();
+});
+
+// ---------- tray, clock, samples ----------
+$('tray').innerHTML = qIcon(18);
+$('tray').title = 'AIR · on';
+$('tray').addEventListener('click', togglePop);
+const tick = () => { $('clock').textContent = new Date().toTimeString().slice(0, 5); };
+tick(); setInterval(tick, 10000);
+document.querySelectorAll('[data-sample]').forEach(b => b.addEventListener('click', () => {
+  clearInterval(typing);
+  const text = SAMPLES[b.dataset.sample].text;
+  field.focus(); field.select(); document.execCommand('delete');
+  let k = 0;
+  typing = setInterval(() => {
+    if (k >= text.length) { clearInterval(typing); return; }
+    field.focus(); document.execCommand('insertText', false, text[k++]);
+  }, 38);
+}));
+$('clear').addEventListener('click', () => { clearInterval(typing); field.focus(); field.select(); document.execCommand('delete'); });
+
+// ---------- engine check and warm-up ----------
+const setEngine = (live, why) => {
+  st.engine = live ? 'live' : 'canned';
+  const e = $('engine');
+  e.className = 'engine' + (live ? ' live' : '');
+  e.textContent = live ? `Live: ${MODEL} on your Ollama` : `Samples only: ${why}`;
+};
+fetch(OLLAMA + '/api/tags').then(r => r.json()).then(j => {
+  const ok = (j.models || []).some(m => m.name === MODEL);
+  setEngine(ok, ok ? '' : `${MODEL} is not pulled`);
+  if (ok) generate(TONES.Casual.tpl.replace('{0}', 'This is a test'), new AbortController().signal, () => {}).catch(() => {});
+}).catch(() => setEngine(false, 'Ollama did not answer'));
+
+applyTheme();
+render();
+field.focus();
+log(`AIR is on. The AIR key is ${keyName()}.`);
+</script>
+</body>
+</html>
