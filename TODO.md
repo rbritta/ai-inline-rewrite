@@ -11,10 +11,11 @@ state it as fact.
 - **`ant auth login`.** The Anthropic SDK reads a profile from `%APPDATA%\Anthropic` when no key is set; that was read
   in the SDK's code and checked in the tests with a made-up profile. A real sign-in with the Anthropic CLI, then AIR
   using it, was not tried.
-- **The engine picker in the running app.** The Engine section of the settings window is rendered by
-  `--render-previews`, and its lists and texts are unit-tested. Switching engines and models in the running app (the
-  status line and the bubble following at once, Ollama's installed models in the list) is covered by checks in
-  `tools/smoke` that have not been run yet.
+- **Another model, picked in the running app.** Switching engines there passed the desktop smoke test on the
+  reference machine on 2026-11-22: Ollama to Claude and back, the status line and the bubble following at once with
+  no restart, Claude's models in the list, and a fresh sample corrected after switching back (Claude in its
+  no-credential state, since live Claude is the first item). Picking another model from the list, for either
+  engine, was not run.
 - **Other configurations.** Every measurement comes from the reference machine (docs/ENGINES.md): Windows 11, a 12 GB
   desktop GPU, a 24-core desktop CPU, 64 GB of RAM. Not tested: other GPUs (and how much video memory the default
   model needs on them), CPU-only laptops, a full bubble of three tones on the CPU, and Windows 10.
@@ -25,7 +26,7 @@ state it as fact.
 
 Roughly in the order it would be picked up. Nothing here is promised; an issue moves an item up.
 
-- A demo GIF for the README, recorded from the real app.
+- Code-signed releases, so Windows names the publisher instead of an unknown one.
 - A setting for how long Ollama keeps the model loaded (AIR asks for 30 minutes), and unloading it when AIR is
   turned off or quits.
 - A smaller default model for PCs without a GPU, chosen with `tools/ToneCheck` on a CPU, and the first-run hint

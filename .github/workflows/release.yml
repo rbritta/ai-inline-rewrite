@@ -1,13 +1,18 @@
 name: release
 
 # Tag a commit `vX.Y.Z` (the <Version> in src/AiInlineRewrite/AiInlineRewrite.csproj) to build the self-contained
-# exe and publish it as a GitHub Release whose notes are the CHANGELOG section of that version.
+# exe and publish it as a GitHub Release whose notes are the CHANGELOG section of that version, with the zip, its
+# SHA-256 checksum and a build provenance attestation. Run by hand (workflow_dispatch), it is a rehearsal of the
+# csproj's version: the same build, zip, checksum and attestation, kept as a workflow artifact, and no Release.
 on:
   push:
     tags: [ 'v*' ]
+  workflow_dispatch:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   release:
@@ -18,12 +23,22 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Version (the tag, or the csproj's on a rehearsal)
+        shell: pwsh
+        run: |
+          if ($env:GITHUB_REF_TYPE -eq 'tag') { $tag = $env:GITHUB_REF_NAME }
+          else {
+            $csproj = [xml](Get-Content -Raw -Encoding UTF8 src/AiInlineRewrite/AiInlineRewrite.csproj)
+            $tag = 'v' + @($csproj.Project.PropertyGroup | ForEach-Object { $_.Version } | Where-Object { $_ })[0].Trim()
+          }
+          "TAG=$tag" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
+
       - name: Release notes (the tag must name the version)
         shell: pwsh
         run: |
-          ./tools/release-notes.ps1 -Tag $env:GITHUB_REF_NAME -OutFile release-notes.md
+          ./tools/release-notes.ps1 -Tag $env:TAG -OutFile release-notes.md
           if ($LASTEXITCODE -ne 0) { exit 1 }
-          $footer = "`n---`n`nDownload ``AiInlineRewrite-$env:GITHUB_REF_NAME-win-x64.zip`` below, unzip it anywhere and run ``AiInlineRewrite.exe``. By default it needs [Ollama](https://ollama.com) with the model pulled once (``ollama pull qwen2.5:7b``); with no video card, Claude through the Anthropic API is the other engine (see the README). The exe is not code-signed yet, so Windows SmartScreen may ask you to confirm the first run.`n"
+          $footer = "`n---`n`nDownload ``AiInlineRewrite-$env:TAG-win-x64.zip`` below, unzip it anywhere and run ``AiInlineRewrite.exe``. By default it needs [Ollama](https://ollama.com) with the model pulled once (``ollama pull qwen2.5:7b``); Claude through the Anthropic API is a second engine, built but not validated yet (see the README). The exe is not code-signed yet ([Code signing policy](https://github.com/$env:GITHUB_REPOSITORY/blob/main/CODE_SIGNING.md)), so Windows SmartScreen may ask you to confirm the first run. To check that the zip is the one this workflow built, see [Verifying a download](https://github.com/$env:GITHUB_REPOSITORY/blob/main/SECURITY.md#verifying-a-download).`n"
           [IO.File]::AppendAllText("$PWD/release-notes.md", $footer)
 
       - name: Setup .NET
@@ -40,15 +55,36 @@ jobs:
       - name: Publish (self-contained single file)
         run: dotnet publish src/AiInlineRewrite/AiInlineRewrite.csproj -p:PublishProfile=win-x64 --nologo
 
-      - name: Zip
+      - name: Zip and checksum
         shell: pwsh
         run: |
-          $zip = "AiInlineRewrite-$env:GITHUB_REF_NAME-win-x64.zip"
+          $zip = "AiInlineRewrite-$env:TAG-win-x64.zip"
           Compress-Archive -Path artifacts/publish/win-x64/AiInlineRewrite.exe, LICENSE, README.md -DestinationPath $zip
+          $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
+          [IO.File]::WriteAllText("$PWD/$zip.sha256", "$hash  $zip`n")
           "ZIP=$zip" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
 
+      - name: Build provenance attestation (the exe and the zip)
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            artifacts/publish/win-x64/AiInlineRewrite.exe
+            ${{ env.ZIP }}
+
+      - name: Keep the rehearsal's files
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rehearsal-${{ env.TAG }}
+          path: |
+            ${{ env.ZIP }}
+            ${{ env.ZIP }}.sha256
+
       - name: Publish GitHub Release
+        if: github.ref_type == 'tag'
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ env.ZIP }}
+          files: |
+            ${{ env.ZIP }}
+            ${{ env.ZIP }}.sha256
           body_path: release-notes.md

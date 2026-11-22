@@ -9,8 +9,9 @@ Type in your language, get it rewritten right where you type. A small Windows tr
 Portuguese or in English in any app, pause, and a bubble under the text cursor offers it in clean English, in a few
 tones. Pick one with a key and it replaces what you typed. AIR for short.
 
-It runs locally by default, with an open model in [Ollama](https://ollama.com) on your PC, or with Claude through the
-Anthropic API when you would rather not run a model yourself (no video card, for one).
+It runs locally by default, with an open model in [Ollama](https://ollama.com) on your PC. A second engine, Claude
+through the Anthropic API, is built for when you would rather not run a model yourself (no video card, for one), but
+it is [not validated yet](TODO.md#not-validated-yet): it was tested only against a fake Anthropic API.
 
 [![CI](https://github.com/rbritta/ai-inline-rewrite/actions/workflows/ci.yml/badge.svg)](https://github.com/rbritta/ai-inline-rewrite/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/rbritta/ai-inline-rewrite?sort=semver&color=0284c7)](https://github.com/rbritta/ai-inline-rewrite/releases/latest)
@@ -18,7 +19,9 @@ Anthropic API when you would rather not run a model yourself (no video card, for
 
 <div align="center">
 
-<img src="docs/bubble-card.png" width="500" alt="The AIR bubble in pick mode: three versions of 'i dont think we can finish this until friday', Casual, Concise and Polished, each with the words it changed struck through in red and the new ones in green; the second is selected, and the key hints up, down, Enter, 1 to 3 and Esc sit in the bar." />
+<img src="docs/demo.gif" width="640" alt="AIR at work in a draft window: 'i dont think we can finish this until friday' is typed, the bubble below offers three corrected versions with the words that go struck through in red and the new ones in green, Right Ctrl opens pick mode, Down and Enter apply the Concise one; then 'acho que a gente precisa conversar sobre o prazo amanhã' is typed, comes back translated, and 1 applies the first version." />
+
+<sub>The real app on the reference machine, with <code>qwen2.5:7b</code> on its GPU, in real time.</sub>
 
 </div>
 
@@ -47,7 +50,7 @@ on; turn AIR off in the settings or the tray menu when you want it gone, and the
 
 AIR asks a language model for each version, through one of two engines:
 
-| | Ollama (default) | Claude |
+| | Ollama (default) | Claude ([not validated yet](TODO.md#not-validated-yet)) |
 |---|---|---|
 | Where the model runs | on your PC: `qwen2.5:7b` (Qwen2.5 7B, Apache 2.0) | at Anthropic: Claude Haiku 5.5 by default |
 | You need | Ollama and the model (a 4.7 GB download) | internet and an Anthropic API key |
@@ -76,9 +79,14 @@ backends, Docker, and the platforms. The Claude engine was tested only against a
 2. **AIR.** Download `AiInlineRewrite-vX.Y.Z-win-x64.zip` from
    [Releases](https://github.com/rbritta/ai-inline-rewrite/releases/latest), unzip it anywhere and run
    `AiInlineRewrite.exe`. It is one self-contained file: no installer, no .NET to install. The exe is not code-signed
-   yet, so SmartScreen may ask you to confirm the first run.
+   yet ([code signing policy](CODE_SIGNING.md)), so SmartScreen may ask you to confirm the first run; the Release
+   carries a checksum and a build attestation to [verify the download](SECURITY.md#verifying-a-download).
 
 3. **Start with Windows** (optional): right-click the tray icon and check *Start with Windows*.
+
+**Uninstall.** Uncheck *Start with Windows* in the tray menu (that deletes its value under
+`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`), quit AIR from the tray, and delete `AiInlineRewrite.exe` and
+the folder `%AppData%\AiInlineRewrite` (the settings, and the log when it was on). AIR writes nothing else.
 
 Windows 11, 64-bit. Windows 10 64-bit was [not tested yet](TODO.md#not-validated-yet). Windows only: AIR is made of
 Windows desktop APIs ([why](docs/ENGINES.md#platforms)). Running it a second time just opens the settings of the copy
@@ -97,6 +105,12 @@ already running.
 | Any other key, or 4 s without a key | leaves pick mode, and the key types as usual |
 | Click a version | applies it |
 | Drag the bubble by its bar | leaves it there (see *Follow the text cursor*) |
+
+<div align="center">
+
+<img src="docs/bubble-card.png" width="500" alt="The AIR bubble in pick mode: three versions of 'i dont think we can finish this until friday', Casual, Concise and Polished, each with the words it changed struck through in red and the new ones in green; the second is selected, and the key hints up, down, Enter, 1 to 3 and Esc sit in the bar." />
+
+</div>
 
 The keys above are taken from the app you type in only while pick mode is on; the rest of the time AIR only listens.
 Right Ctrl keeps working as Ctrl in any combination (Ctrl+C, Ctrl+click): only a press and release with no other key
@@ -160,7 +174,8 @@ Click the gear in the bubble, and the settings open beside it; or click the tray
 - **Engine**: Ollama or Claude, and the model: the models Ollama has installed, or Claude Haiku, Sonnet or Opus 5.5.
   Below them, the engine's state (a green dot and Ready, or what is wrong and the one step that fixes it). A change
   applies at once, without a restart. The Anthropic credential is never typed here; it stays in the environment
-  ([Engines](#engines)). Switching in the running app is [not validated yet](TODO.md#not-validated-yet).
+  ([Engines](#engines)). Switching engines in the running app is covered by the desktop smoke test; picking another
+  model there is [not validated yet](TODO.md#not-validated-yet).
 
 <div align="center">
 
@@ -259,7 +274,8 @@ design/experience.html            the HTML mockup the app follows
 ## Contributing
 
 Issues and pull requests are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) and the
-[Code of Conduct](CODE_OF_CONDUCT.md) first. Found a security issue? See [SECURITY.md](SECURITY.md).
+[Code of Conduct](CODE_OF_CONDUCT.md) first. Found a security issue? See [SECURITY.md](SECURITY.md). How releases
+are signed: [Code signing policy](CODE_SIGNING.md).
 
 ## License
 

@@ -165,10 +165,14 @@ def set_text(hwnd, text):
 
 
 def uia(pid):
+    """Every element of the process's windows. A dump that fails or does not decode raises, so a broken read is never
+    taken for a window with nothing in it."""
     here = os.path.dirname(os.path.abspath(__file__))
     out = subprocess.run(['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', os.path.join(here, 'uia_dump.ps1'),
-                          '-ProcessId', str(pid)], capture_output=True, text=True, encoding='utf-8', timeout=60)
-    return json.loads(out.stdout or '[]')
+                          '-ProcessId', str(pid)], capture_output=True, timeout=60)
+    if out.returncode != 0:
+        raise RuntimeError('uia_dump.ps1 failed: ' + out.stderr.decode('utf-8', 'replace').strip())
+    return json.loads(out.stdout.decode('utf-8') or '[]')
 
 
 def uia_press(pid, window, name, control_type=''):

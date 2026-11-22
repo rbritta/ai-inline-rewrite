@@ -39,7 +39,9 @@ dotnet test tests\AiInlineRewrite.Tests
   corrected), 23 checks in all, and saves screenshots. The engine picker checks need Ollama as the engine and no
   Anthropic credential on the PC; otherwise they print SKIP and the run has 18. It takes over the keyboard and mouse
   for about 3 minutes, so run it on an unlocked desktop nobody is using; it stops if the focus leaves its windows or
-  another window covers the point it is about to click, and puts your AIR settings back at the end. It starts the
+  another window covers the point it is about to click, and puts your AIR settings back at the end. Anything else
+  that breaks the run ends it as one FAIL naming the last check that passed, with the traceback in `error.txt` in the
+  folder. It starts the
   app with `--accept-injected`, the switch that lets synthesized keystrokes drive AIR (without it, only real typing
   does).
 - Beyond that, check by hand in real apps (Notepad, a browser, a chat app), with the AIR key and each tone.

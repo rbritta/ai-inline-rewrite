@@ -3,8 +3,10 @@ the follow arrow, the settings and their engine picker, and checks what happened
 box's content.
 
 It takes over the keyboard and mouse for about 3 minutes: run it on an unlocked desktop nobody is using. It stops
-at once if the focus leaves its own windows (someone clicked elsewhere) or the desktop is locked. The user's AIR
-settings are saved first and put back at the end.
+at once if the focus leaves its own windows (someone clicked elsewhere) or the desktop is locked. Anything else that
+breaks the run (an element that never shows up, a read that fails) ends it as one FAIL naming the last check that
+passed, with the traceback in error.txt in the output folder. The user's AIR settings are saved first and put back
+at the end.
 
     python tools/smoke/smoke_test.py <AiInlineRewrite.exe> <output folder for the screenshots>
 
@@ -19,12 +21,16 @@ import shutil
 import subprocess
 import sys
 import time
+import traceback
 
 from PIL import ImageGrab
 
 import winput as wi
 
 EXE, OUT = sys.argv[1], sys.argv[2]
+# The bubble's statuses carry "·" and arrows; redirected to a file, the console code page cannot print them.
+sys.stdout.reconfigure(encoding='utf-8')
+sys.stderr.reconfigure(encoding='utf-8')
 HERE = os.path.dirname(os.path.abspath(__file__))
 SETTINGS = os.path.join(os.environ['APPDATA'], 'AiInlineRewrite', 'settings.json')
 SETTINGS_WIN = 'AI Inline Rewrite Settings'
@@ -40,6 +46,25 @@ class Abort(Exception):
 def check(name, ok, detail=''):
     results.append((name, bool(ok), detail))
     print(('PASS ' if ok else 'FAIL ') + name + (f'  [{detail}]' if detail else ''), flush=True)
+
+
+def within(seconds, probe):
+    """Polls until the probe holds, at most that long: the waits follow the app instead of a fixed sleep."""
+    end = time.time() + seconds
+    while True:
+        if probe():
+            return True
+        if time.time() > end:
+            return False
+        time.sleep(0.25)
+
+
+def find(items, match, what):
+    """The first item that matches, or an error that names what was missing (rather than a bare StopIteration)."""
+    for e in items:
+        if match(e):
+            return e
+    raise LookupError(f'{what} not found')
 
 
 def desktop_unlocked():
@@ -104,10 +129,15 @@ def main():
         run(air.pid, tgt.pid, pids)
     except Abort as e:
         check('run to the end', False, str(e))
+    except Exception as e:
+        with open(os.path.join(OUT, 'error.txt'), 'w', encoding='utf-8') as f:
+            traceback.print_exc(file=f)
+        last = next((r[0] for r in reversed(results) if r[1]), 'the start')
+        check('run to the end', False, f'{type(e).__name__} after "{last}": {e} (traceback in error.txt)')
     finally:
         air.kill()
+        air.wait(timeout=10)  # gone before its settings file is put back
         subprocess.run(['taskkill', '/PID', str(tgt.pid), '/T', '/F'], capture_output=True)
-        time.sleep(0.5)
         if backup:
             shutil.copyfile(backup, SETTINGS)
     failed = [r for r in results if not r[1]]
@@ -119,7 +149,6 @@ def run(air_pid, tgt_pid, pids):
     form = wi.find_window('AIR smoke test')
     edit = wi.child_edit(form)
     l, t, r, b = wi.rect(form)
-    time.sleep(3)
 
     def ui():
         return [e for e in wi.uia(air_pid) if e['win'] == 'AI Inline Rewrite']
@@ -134,7 +163,10 @@ def run(air_pid, tgt_pid, pids):
         return e['name'].split(': ', 1)[1]
 
     def button(name):
-        return next(e for e in ui() if e['type'] == 'Button' and e['name'] == name)
+        return find(ui(), lambda e: e['type'] == 'Button' and e['name'] == name, f'the bubble button "{name}"')
+
+    def follow():
+        return button('Follow the text cursor')['toggle']
 
     def center(e):
         return e['x'] + e['w'] // 2, e['y'] + e['h'] // 2
@@ -164,13 +196,14 @@ def run(air_pid, tgt_pid, pids):
         wi.type_text(text)
         return wait_ready()
 
-    def tap():
-        guard(pids)
-        wi.press('rctrl')
-        time.sleep(0.4)
-
     def picking():
         return 'Esc' in status()
+
+    def tap():
+        """The AIR key; True once pick mode shows."""
+        guard(pids)
+        wi.press('rctrl')
+        return within(3, picking)
 
     def selected():
         return next((i for i, e in enumerate(rows()) if e['status'] == 'Selected'), None)
@@ -181,22 +214,15 @@ def run(air_pid, tgt_pid, pids):
     def settings_say(text):
         return any(e['type'] == 'Text' and e['name'] == text for e in settings_ui())
 
-    def within(seconds, probe):
-        end = time.time() + seconds
-        while True:
-            if probe():
-                return True
-            if time.time() > end:
-                return False
-            time.sleep(0.25)
+    # the app is up once its bubble answers through UI Automation
+    if not within(30, lambda: any(e['type'] == 'Button' and e['name'] == 'Follow the text cursor' for e in ui())):
+        raise LookupError('the bubble did not show up within 30 s')
 
     # the follow arrow: on, so the bubble comes to the text cursor
     focus_field()
-    fol = button('Follow the text cursor')
-    if fol['toggle'] != 'On':
-        click(*center(fol))
-        time.sleep(0.6)
-    check('follow arrow on', button('Follow the text cursor')['toggle'] == 'On')
+    if follow() != 'On':
+        click(*center(button('Follow the text cursor')))
+    check('follow arrow on', within(3, lambda: follow() == 'On'))
 
     # English: corrected versions, pick mode with the arrows and Enter
     s = fresh(EN)
@@ -204,23 +230,21 @@ def run(air_pid, tgt_pid, pids):
     check('English sample written', 'corrected' in s and len(rs) >= 3, f'{s} | ' + ' / '.join(row_text(x) for x in rs))
     bub = wi.find_window('AI Inline Rewrite')
     shot('1-english.png', wi.rect(bub))
-    tap()
-    check('AIR key opens pick mode on the first version', picking() and selected() == 0, status())
+    check('AIR key opens pick mode on the first version', tap() and selected() == 0, status())
     shot('2-pick.png', wi.rect(bub))
     guard(pids); wi.press('up')
-    check('up on the first goes to the last', selected() == len(rs) - 1, str(selected()))
+    check('up on the first goes to the last', within(3, lambda: selected() == len(rs) - 1), str(selected()))
     guard(pids); wi.press('down')
-    check('down on the last goes back to the first', selected() == 0, str(selected()))
+    check('down on the last goes back to the first', within(3, lambda: selected() == 0), str(selected()))
     guard(pids); wi.press('down')
+    within(3, lambda: selected() == 1)
     want = row_text(rows()[1])
     guard(pids); wi.press('enter')
-    time.sleep(1.2)
-    got = wi.get_text(edit)
-    check('Enter applies the selected version', got == want, f'{got!r} vs {want!r}')
+    check('Enter applies the selected version', within(3, lambda: wi.get_text(edit) == want),
+          f'{wi.get_text(edit)!r} vs {want!r}')
     shot('3-applied.png', (l, t, r, b))
     guard(pids); wi.chord('ctrl', 'z')
-    time.sleep(0.4)
-    check('Ctrl+Z brings the typed sentence back', wi.get_text(edit) == EN, repr(wi.get_text(edit)))
+    check('Ctrl+Z brings the typed sentence back', within(3, lambda: wi.get_text(edit) == EN), repr(wi.get_text(edit)))
 
     # Portuguese: translated, a number applies directly
     s = fresh(PT)
@@ -230,42 +254,46 @@ def run(air_pid, tgt_pid, pids):
     want = row_text(rs[0])
     tap()
     guard(pids); wi.press(0x31)
-    time.sleep(1.2)
-    check('1 applies the first version', wi.get_text(edit) == want, repr(wi.get_text(edit)))
+    check('1 applies the first version', within(3, lambda: wi.get_text(edit) == want), repr(wi.get_text(edit)))
 
     # Esc closes, another key types, a chord is not a tap, 4 s close it
     fresh(EN)
     tap()
     guard(pids); wi.press('esc')
-    check('Esc closes pick mode and leaves the text', not picking() and wi.get_text(edit) == EN, status())
+    check('Esc closes pick mode and leaves the text', within(3, lambda: not picking()) and wi.get_text(edit) == EN,
+          status())
     tap()
     guard(pids); wi.type_text('x')
-    time.sleep(0.4)
-    check('another key closes pick mode and types', not picking() and wi.get_text(edit) == EN + 'x', repr(wi.get_text(edit)))
+    check('another key closes pick mode and types', within(3, lambda: wi.get_text(edit) == EN + 'x') and not picking(),
+          repr(wi.get_text(edit)))
     guard(pids); wi.chord('rctrl', 'a')
-    time.sleep(0.4)
+    time.sleep(0.6)  # nothing to wait for: the check is that pick mode does not open
     check('Right Ctrl in a chord is not a tap', not picking(), status())
-    tap()
-    time.sleep(4.6)
-    check('pick mode closes after 4 s without a key', not picking(), status())
+    pressed_at = time.time()
+    opened = tap()
+    time.sleep(max(0.0, pressed_at + 4.6 - time.time()))  # the 4 s are what this check measures
+    check('pick mode closes after 4 s without a key', opened and not picking(), status())
 
     # drag the bubble: follow turns off; the arrow turns it back on
-    air_label = next(e for e in ui() if e['type'] == 'Text' and e['name'] == 'AIR')
+    air_label = find(ui(), lambda e: e['type'] == 'Text' and e['name'] == 'AIR', 'the AIR label of the bubble')
     x, y = center(air_label)
     aim(x, y, pids)
     wi.drag(x, y, x + 40, y + 160)
-    time.sleep(0.6)
-    check('dragging the bubble turns follow off', button('Follow the text cursor')['toggle'] == 'Off')
+    check('dragging the bubble turns follow off', within(3, lambda: follow() == 'Off'))
     shot('5-dragged.png', wi.rect(bub))
     click(*center(button('Follow the text cursor')))
-    time.sleep(0.6)
-    check('the arrow turns follow back on', button('Follow the text cursor')['toggle'] == 'On')
+    check('the arrow turns follow back on', within(3, lambda: follow() == 'On'))
 
     # settings from the gear, closed with its X
     click(*center(button('Settings')))
-    time.sleep(1.2)
-    sw = wi.user32.FindWindowW(None, 'AI Inline Rewrite Settings')
-    check('the gear opens the settings', bool(sw) and wi.user32.IsWindowVisible(sw))
+
+    def settings_window():
+        return wi.user32.FindWindowW(None, SETTINGS_WIN)
+
+    shown = within(5, lambda: bool(settings_window()) and wi.user32.IsWindowVisible(settings_window())
+                   and any(e['name'] == 'Close' for e in settings_ui()))
+    sw = settings_window()
+    check('the gear opens the settings', shown)
     if sw:
         # beside the bubble: side by side, overlapping in height (both windows have transparent room for the shadow)
         k = wi.user32.GetDpiForWindow(bub) / 96
@@ -298,10 +326,9 @@ def run(air_pid, tgt_pid, pids):
             check('Engine Ollama again: the settings say Ready',
                   pressed and within(15, lambda: settings_say('Ready')), f'pressed {pressed}')
 
-        close = next(e for e in settings_ui() if e['name'] == 'Close')
+        close = find(settings_ui(), lambda e: e['name'] == 'Close', 'the X of the settings')
         click(*center(close))
-        time.sleep(0.6)
-        check('the X closes the settings', not wi.user32.IsWindowVisible(sw))
+        check('the X closes the settings', within(3, lambda: not wi.user32.IsWindowVisible(sw)))
 
     if switched:
         s = fresh(EN)

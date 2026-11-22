@@ -20,4 +20,9 @@ foreach ($w in $A::RootElement.FindAll([System.Windows.Automation.TreeScope]::Ch
         }
     }
 }
-ConvertTo-Json -InputObject @($out) -Compress -Depth 3
+# UTF-8 bytes straight to stdout: through the console, Windows PowerShell would use the OEM code page, and a "·" in
+# the bubble's status would reach the reader as a byte UTF-8 cannot decode.
+$bytes = [System.Text.UTF8Encoding]::new($false).GetBytes((ConvertTo-Json -InputObject @($out) -Compress -Depth 3))
+$stdout = [Console]::OpenStandardOutput()
+$stdout.Write($bytes, 0, $bytes.Length)
+$stdout.Flush()

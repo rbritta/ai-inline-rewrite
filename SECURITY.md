@@ -36,7 +36,24 @@ are typing to Anthropic, and only when you choose it.
   you check it in the tray menu.
 - **Elevated apps.** AIR runs without administrator rights, so Windows keeps it from seeing keys typed into apps
   running as administrator. Do not run AIR as administrator to get around it.
-- **The exe is not code-signed yet.** Download it only from this repository's Releases page.
+- **The exe is not code-signed yet.** Download it only from this repository's Releases page, and check it as below.
+
+## Verifying a download
+
+Each release has, next to the zip, its SHA-256 checksum (the `.sha256` file) and a build provenance attestation: a
+signed record, made by the release workflow, that this repository built the exe and the zip from the tagged commit.
+
+- **The checksum**, in PowerShell, in the folder of both downloads (prints `True` when they match):
+
+  ```powershell
+  (Get-FileHash .\AiInlineRewrite-v0.1.0-win-x64.zip).Hash -eq (Get-Content .\AiInlineRewrite-v0.1.0-win-x64.zip.sha256).Split(' ')[0]
+  ```
+
+- **The attestation**, with the [GitHub CLI](https://cli.github.com), for the zip or the exe inside it:
+
+  ```powershell
+  gh attestation verify .\AiInlineRewrite-v0.1.0-win-x64.zip --repo rbritta/ai-inline-rewrite
+  ```
 
 ## Reporting a vulnerability
 

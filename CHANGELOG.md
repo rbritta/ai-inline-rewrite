@@ -6,7 +6,7 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-11-21
+## [0.1.0] - 2026-11-22
 
 The first public version.
 
@@ -47,7 +47,8 @@ The first public version.
 - `tools/ToneCheck`, which sends sample sentences through every tone on either engine and times each version; its
   runs are in docs/PROMPTS.md.
 - `tools/smoke`, a smoke test that drives the real app on the desktop, the engine picker included (CONTRIBUTING.md).
-- A self-contained single-file exe for Windows x64, built and released by CI on a `vX.Y.Z` tag.
+- A self-contained single-file exe for Windows x64, built and released by CI on a `vX.Y.Z` tag, with the zip's
+  SHA-256 checksum and a build provenance attestation to verify it (SECURITY.md).
 
 [Unreleased]: https://github.com/rbritta/ai-inline-rewrite/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.1.0
