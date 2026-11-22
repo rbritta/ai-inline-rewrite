@@ -13,6 +13,7 @@ permissions:
   contents: write
   id-token: write
   attestations: write
+  artifact-metadata: write
 
 jobs:
   release:
@@ -65,7 +66,7 @@ jobs:
           "ZIP=$zip" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
 
       - name: Build provenance attestation (the exe and the zip)
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest@v4
         with:
           subject-path: |
             artifacts/publish/win-x64/AiInlineRewrite.exe
