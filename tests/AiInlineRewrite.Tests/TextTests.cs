@@ -174,6 +174,14 @@ public class PromptsTests
         Assert.EndsWith(":", p);
     }
 
+    [Theory]
+    [MemberData(nameof(AllTones))]
+    public void Only_the_retry_tells_the_model_it_left_English(Tone tone)
+    {
+        Assert.DoesNotContain("switched to another language", Prompts.For(tone, "acho que sim"));
+        Assert.Contains("switched to another language", Prompts.For(tone, "acho que sim", retry: true));
+    }
+
     [Fact]
     public void Casual_no_longer_capitalizes_the_first_letter()
     {

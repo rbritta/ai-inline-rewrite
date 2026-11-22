@@ -19,7 +19,7 @@ public sealed class SettingsTests : IDisposable
         var s = SettingsStore.Load(_dir);
         Assert.True(s.On);
         Assert.Equal([Tone.Casual, Tone.Concise, Tone.Polished], s.EnabledTones());
-        Assert.Equal([Tone.Casual, Tone.Concise, Tone.Polished, Tone.Ornate, Tone.Diplomatic], s.Tones.Select(t => t.Tone));
+        Assert.Equal([Tone.Casual, Tone.Concise, Tone.Polished, Tone.Ornate, Tone.Diplomatic, Tone.Slang, Tone.Trendy], s.Tones.Select(t => t.Tone));
         Assert.Equal(BubbleLayout.Card, s.Layout);
         Assert.Equal(AppTheme.Windows, s.Theme);
         Assert.Equal(AirKey.RightCtrlTap, s.AirKey);
@@ -119,13 +119,15 @@ public sealed class SettingsTests : IDisposable
                 new ToneSetting { Tone = Tone.Concise, On = false },
                 new ToneSetting { Tone = Tone.Polished, On = false },
                 new ToneSetting { Tone = Tone.Ornate, On = true },
+                new ToneSetting { Tone = Tone.Slang, On = false },
+                new ToneSetting { Tone = Tone.Trendy, On = true },
             ],
         };
         SettingsStore.Save(_dir, s);
         var back = SettingsStore.Load(_dir);
 
         Assert.Equal(SettingsStore.Serialize(s), SettingsStore.Serialize(back));
-        Assert.Equal([Tone.Diplomatic, Tone.Casual, Tone.Ornate], back.EnabledTones());
+        Assert.Equal([Tone.Diplomatic, Tone.Casual, Tone.Ornate, Tone.Trendy], back.EnabledTones());
         string file = File.ReadAllText(Path.Combine(_dir, SettingsStore.FileName));
         Assert.Contains("\"Compact\"", file); // enums as names
         Assert.Contains("\"Claude\"", file);
@@ -139,7 +141,7 @@ public sealed class SettingsTests : IDisposable
             { "Tones": [ { "Tone": "Ornate", "On": false }, { "Tone": "Ornate", "On": true }, { "Tone": "Casual", "On": false } ],
               "DebounceMs": 5, "OllamaModel": " ", "OllamaEndpoint": "", "ClaudeModel": "  claude-sonnet-5-5  " }
             """);
-        Assert.Equal([Tone.Ornate, Tone.Casual, Tone.Concise, Tone.Polished, Tone.Diplomatic], s.Tones.Select(t => t.Tone)); // deduped, missing ones added
+        Assert.Equal([Tone.Ornate, Tone.Casual, Tone.Concise, Tone.Polished, Tone.Diplomatic, Tone.Slang, Tone.Trendy], s.Tones.Select(t => t.Tone)); // deduped, missing ones added
         Assert.Equal([Tone.Ornate], s.EnabledTones()); // none on: the first is turned on
         Assert.Equal(Settings.MinDebounceMs, s.DebounceMs);
         Assert.Equal(Settings.DefaultOllamaModel, s.OllamaModel);

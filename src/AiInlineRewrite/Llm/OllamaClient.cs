@@ -41,12 +41,22 @@ public sealed class OllamaClient : IRewriteEngine
 
     public string Model { get; }
 
+    /// <summary>
+    /// A version that came back with letters of another alphabet is asked for once more, telling the model it left
+    /// English: at temperature 0 the same prompt would drift the same way. What still drifts, the app does not offer.
+    /// </summary>
     public async Task<string> RewriteAsync(string sentence, Tone tone, Action<string> onDelta, CancellationToken ct)
+    {
+        string text = await GenerateAsync(sentence, tone, retry: false, onDelta, ct);
+        return TextShape.HasForeignLetters(text) ? await GenerateAsync(sentence, tone, retry: true, onDelta, ct) : text;
+    }
+
+    private async Task<string> GenerateAsync(string sentence, Tone tone, bool retry, Action<string> onDelta, CancellationToken ct)
     {
         var body = new
         {
             model = Model,
-            prompt = Prompts.For(tone, sentence),
+            prompt = Prompts.For(tone, sentence, retry),
             stream = true,
             keep_alive = KeepAlive,
             options = new { temperature = 0.0, num_predict = 256 },

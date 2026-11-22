@@ -810,6 +810,8 @@ public static class Samples
         Tone.Polished => "I believe we should discuss the deadline tomorrow",
         Tone.Ornate => "I believe it would be prudent for us to discuss the deadline tomorrow",
         Tone.Diplomatic => "would it be possible for us to talk about the deadline tomorrow",
+        Tone.Slang => "I think we gotta talk about the deadline tomorrow",
+        Tone.Trendy => "ngl we lowkey gotta talk about the deadline tomorrow",
         _ => "I think we need to talk about the deadline tomorrow",
     };
 }

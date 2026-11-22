@@ -122,6 +122,31 @@ public class AirKeyDetectorTests
         Assert.Equal(label, AirKeys.Label(key));
     }
 
+    [Theory]
+    [InlineData(AirKey.RightCtrlTap, AirKey.RightShiftTap)]
+    [InlineData(AirKey.Pause, AirKey.RightShiftTap)]
+    [InlineData(AirKey.ScrollLock, AirKey.RightShiftTap)]
+    [InlineData(AirKey.Insert, AirKey.RightShiftTap)]
+    [InlineData(AirKey.RightShiftTap, AirKey.RightCtrlTap)] // never the AIR key itself
+    public void The_off_key_is_a_tap_of_Right_Shift_unless_that_is_the_AIR_key(AirKey airKey, AirKey off)
+    {
+        Assert.Equal(off, AirKeys.OffKey(airKey));
+        Assert.NotEqual(airKey, AirKeys.OffKey(airKey));
+    }
+
+    [Fact]
+    public void A_capital_typed_with_Right_Shift_is_not_the_off_key()
+    {
+        var off = new AirKeyDetector(AirKeys.OffKey(AirKey.RightCtrlTap));
+        off.KeyDown(Vk.RShift, 0);
+        off.KeyDown(Vk.A, 40); // Shift+A
+        off.KeyUp(Vk.A, 70);
+        Assert.False(off.KeyUp(Vk.RShift, 110));
+
+        off.KeyDown(Vk.RShift, 1000); // alone: a tap
+        Assert.True(off.KeyUp(Vk.RShift, 1100));
+    }
+
     [Fact]
     public void Nothing_uses_Ctrl_Alt()
         => Assert.DoesNotContain(AirKeys.All, k => AirKeys.Label(k).Contains("Alt", StringComparison.Ordinal));

@@ -44,7 +44,8 @@ sentence you are typing and writes it again in English, once per tone:
 
 Then tap the **AIR key** (Right Ctrl, alone) and pick a version: it replaces your sentence in place. Or ignore it
 and keep typing: the versions clear, and new ones come at the next pause. The bubble stays by your text while AIR is
-on; turn AIR off in the settings or the tray menu when you want it gone, and the AIR key brings it back.
+on; when you want it gone, tap **Right Shift** alone to put AIR to sleep (or turn it off in the settings or the tray
+menu), and the AIR key brings it back.
 
 ## Engines
 
@@ -100,8 +101,9 @@ already running.
 | Tap **Right Ctrl** alone (the AIR key) | pick mode: the first version is selected and a 4 s timer runs |
 | **↑ ↓** | moves the selection (↑ on the first goes to the last); each key restarts the timer |
 | **Enter** | applies the selected version |
-| **1** to **5** | applies that version directly |
+| **1** to **7** | applies that version directly |
 | **Esc** | clears the versions |
+| Tap **Right Shift** alone | AIR sleeps: the bubble closes and nothing is written until you tap the AIR key |
 | Any other key, or 4 s without a key | leaves pick mode, and the key types as usual |
 | Click a version | applies it |
 | Drag the bubble by its bar | leaves it there (see *Follow the text cursor*) |
@@ -114,8 +116,9 @@ already running.
 
 The keys above are taken from the app you type in only while pick mode is on; the rest of the time AIR only listens.
 Right Ctrl keeps working as Ctrl in any combination (Ctrl+C, Ctrl+click): only a press and release with no other key
-counts as a tap. When AIR is off, the AIR key turns it back on. Nothing uses Ctrl+Alt, which is AltGr on the ABNT2
-keyboards many Brazilians use.
+counts as a tap. Right Shift too: a capital typed with it is not a tap. When AIR is off or asleep, the AIR key turns
+it back on; when Right Shift is the AIR key, a tap of Right Ctrl puts AIR to sleep. Nothing uses Ctrl+Alt, which is
+AltGr on the ABNT2 keyboards many Brazilians use.
 
 **Applying** deletes your sentence from the end of the field and pastes the version, then puts back whatever was on your
 clipboard (text, images, files). Ctrl+Z in the app undoes it. If the field changed meanwhile (you typed after the
@@ -134,6 +137,11 @@ number.
 | **Polished** | yes | fuller and courteous, in plain everyday words | I don't think we'll be able to finish this until Friday |
 | **Ornate** | no | refined, literary vocabulary | I do not believe we shall be able to conclude this endeavor until Friday |
 | **Diplomatic** | no | softens blunt or rude wording, keeps what you mean | I believe we may need until Friday to finish this |
+| **Slang** | no | everyday slang, the way people talk today | we're gonna need more time to fix this bug ¹ |
+| **Trendy** | no | the newest internet slang | ngl we gonna need more time to fix this bug fr ¹ |
+
+¹ For "we gonna need more time to fix this bug": the table's sentence leaves no room for slang (Slang wrote what
+Casual writes, Trendy only added "fr").
 
 Real output of `qwen2.5:7b` on the reference machine; [docs/PROMPTS.md](docs/PROMPTS.md) has ten sample sentences
 through every tone, and how the prompts were tuned.

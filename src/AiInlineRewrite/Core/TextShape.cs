@@ -10,7 +10,7 @@ namespace AiInlineRewrite.Core;
 public static partial class TextShape
 {
     // Labels a model sometimes echoes from the prompt ("Corrected: ...").
-    [GeneratedRegex(@"^\s*(Corrected|Concise|Polished|Rewritten|Diplomatic|Formal|Sentence|Answer|Output)\s*:\s*", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"^\s*(Corrected|Concise|Polished|Rewritten|Diplomatic|Slang|Trendy|Formal|Sentence|Answer|Output)\s*:\s*", RegexOptions.IgnoreCase)]
     private static partial Regex EchoedLabel();
 
     // Kept upper whatever the user typed: the pronoun I, and day and month names ("May" left out: it is also a verb).

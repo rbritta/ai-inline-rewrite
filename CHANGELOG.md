@@ -6,6 +6,23 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-22
+
+### Added
+- Two slang tones, off by default: Slang, everyday slang the way people talk today (gonna, my bad, no worries), and
+  Trendy, the newest internet slang (ngl, lowkey, fr, no cap). On `qwen2.5:7b` Trendy leans on "fr" and once kept a
+  garbled Portuguese word; docs/PROMPTS.md has the run.
+- A tap of Right Shift alone puts AIR to sleep: the bubble closes and nothing is written until the AIR key wakes it
+  (the same as turning AIR off in the tray). A capital typed with Right Shift is not a tap. When Right Shift is the
+  AIR key, a tap of Right Ctrl does it.
+- `tools/ToneCheck` takes `--sentence` and `--tone`, to run a sentence a user reported through the tones it failed in.
+- The desktop smoke test checks the Right Shift tap, a capital with Right Shift, and waking with the AIR key.
+
+### Fixed
+- A version that drifted into another alphabet mid-sentence (Ornate wrote Chinese for "gírias" in "e a 7 opção que
+  usa girias novas, dá?") showed only an error. The Ollama engine now asks once more, telling the model it left
+  English; what still drifts is not offered, as before.
+
 ## [0.1.0] - 2026-11-22
 
 The first public version.

@@ -37,6 +37,8 @@ public class TextShapeTests
     [Theory]
     [InlineData("Corrected: I think so", "I think so")]
     [InlineData("  Polished:   I believe so  ", "I believe so")]
+    [InlineData("Slang: I think so for sure", "I think so for sure")]
+    [InlineData("Trendy: ngl I think so", "ngl I think so")]
     [InlineData("I think so\n\nThis version keeps the tone.", "I think so")]
     [InlineData("“I think so”", "I think so")]
     [InlineData("", "")]

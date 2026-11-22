@@ -7,7 +7,9 @@ using AiInlineRewrite.Llm;
 //   dotnet run --project tools/ToneCheck -c Release
 //   dotnet run --project tools/ToneCheck -c Release -- --model llama3.1:8b --endpoint http://localhost:11434
 //   dotnet run --project tools/ToneCheck -c Release -- --engine claude --model claude-sonnet-5-5
-// Every option is optional; the defaults are the app's. Claude needs ANTHROPIC_API_KEY and bills the account.
+//   dotnet run --project tools/ToneCheck -c Release -- --sentence "a sentence a user reported" --tone Ornate
+// Every option is optional; the defaults are the app's. --sentence and --tone repeat, and replace the samples and
+// the tones. Claude needs ANTHROPIC_API_KEY and bills the account.
 Console.OutputEncoding = System.Text.Encoding.UTF8; // redirected to a file, the console would write the OEM code page
 var settings = new Settings
 {
@@ -33,6 +35,10 @@ string[] samples =
     "não sei se vai dar tempo de entregar tudo hoje",
     "obrigado pela ajuda, você salvou meu dia",
 ];
+if (Args("--sentence") is { Length: > 0 } given) samples = given;
+IReadOnlyList<Tone> tones = Args("--tone") is { Length: > 0 } named
+    ? [.. named.Select(t => Enum.Parse<Tone>(t, ignoreCase: true))]
+    : Tones.All;
 
 var engine = RewriteEngines.Create(settings);
 var state = await engine.CheckAsync(CancellationToken.None);
@@ -53,7 +59,7 @@ foreach (string sentence in samples)
     Console.WriteLine();
     Console.WriteLine("| Tone | Version |");
     Console.WriteLine("|---|---|");
-    foreach (var tone in Tones.All)
+    foreach (var tone in tones)
     {
         var watch = Stopwatch.StartNew();
         string text;
@@ -86,3 +92,6 @@ string? Arg(string name)
     int i = Array.IndexOf(args, name);
     return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
 }
+
+string[] Args(string name) =>
+    [.. args.Select((a, i) => (a, i)).Where(x => x.a == name && x.i + 1 < args.Length).Select(x => args[x.i + 1])];

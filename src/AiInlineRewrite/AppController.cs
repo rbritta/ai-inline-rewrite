@@ -45,6 +45,9 @@ public sealed class AppController : ISettingsHost, IDisposable
 
     private IRewriteEngine _rewriter;
     private AirKeyDetector _air;
+
+    // The off key (AirKeys.OffKey): the same tap rules as the AIR key, so Shift keeps typing capitals.
+    private AirKeyDetector _off;
     private BubbleWindow _bubble = null!;
     private SettingsWindow? _settingsWindow;
     private WinForms.NotifyIcon _tray = null!;
@@ -79,6 +82,7 @@ public sealed class AppController : ISettingsHost, IDisposable
         Log.Configure(Path.Combine(_dir, "log.txt"), _settings.DiagnosticLog);
         _rewriter = RewriteEngines.Create(_settings);
         _air = new AirKeyDetector(_settings.AirKey);
+        _off = new AirKeyDetector(AirKeys.OffKey(_settings.AirKey));
     }
 
     public Settings Settings => _settings;
@@ -112,7 +116,11 @@ public sealed class AppController : ISettingsHost, IDisposable
             Render();
             _settingsWindow?.Rebuild();
         };
-        _mouse.Input += () => _air.MouseInput();
+        _mouse.Input += () =>
+        {
+            _air.MouseInput();
+            _off.MouseInput(); // Shift+click extends a selection: not a tap
+        };
 
         _hook.Handler = OnKey;
         try
@@ -201,6 +209,8 @@ public sealed class AppController : ISettingsHost, IDisposable
         if (e.Own || (e.Injected && !_acceptInjected)) return false; // AIR's own paste, or another program's keystrokes
         if (e.Down)
         {
+            _off.KeyDown(e.Vk, e.TimeMs); // a tap key: it never fires on key-down
+            if (_off.IsAirKey(e.Vk) && _off.Armed) Post(_mouse.Install);
             if (_air.KeyDown(e.Vk, e.TimeMs))
             {
                 Post(OnAirKey);
@@ -232,6 +242,7 @@ public sealed class AppController : ISettingsHost, IDisposable
             return false;
         }
 
+        bool offTap = _off.KeyUp(e.Vk, e.TimeMs); // before the AIR key's, so both detectors see every key-up
         if (_air.KeyUp(e.Vk, e.TimeMs))
         {
             Post(() =>
@@ -241,6 +252,16 @@ public sealed class AppController : ISettingsHost, IDisposable
             });
             return false; // Right Ctrl / Right Shift up still reaches the app
         }
+        if (offTap)
+        {
+            Post(() =>
+            {
+                _mouse.Uninstall();
+                OnOffKey();
+            });
+            return false; // its key-up still reaches the app
+        }
+        if (_off.IsAirKey(e.Vk)) Post(_mouse.Uninstall);
         if (_air.IsAirKey(e.Vk))
         {
             if (!_air.IsTap) return true;
@@ -280,6 +301,14 @@ public sealed class AppController : ISettingsHost, IDisposable
         ArmPickTimer();
         Log.Write("pick mode: on");
         Render();
+    }
+
+    /// <summary>The off key puts AIR to sleep: the bubble closes and nothing is written until the AIR key wakes it.</summary>
+    private void OnOffKey()
+    {
+        if (!_settings.On) return;
+        SetOn(false);
+        Log.Write("off key: AIR asleep until the AIR key");
     }
 
     private void OnPick(PickOutcome o)
@@ -752,6 +781,7 @@ public sealed class AppController : ISettingsHost, IDisposable
     {
         _settings.AirKey = key;
         _air = new AirKeyDetector(key);
+        _off = new AirKeyDetector(AirKeys.OffKey(key));
         _mouse.Uninstall();
         Log.Write("AIR key: " + key);
         SaveSoon();

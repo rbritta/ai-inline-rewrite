@@ -31,6 +31,13 @@ public static class AirKeys
 
     public static bool IsTap(AirKey key) => key is AirKey.RightCtrlTap or AirKey.RightShiftTap;
 
+    /// <summary>
+    /// The off key: a tap of Right Shift alone puts AIR to sleep (the bubble closes, nothing is written) until the AIR
+    /// key wakes it. When Right Shift is the AIR key, the off key is a tap of Right Ctrl.
+    /// </summary>
+    public static AirKey OffKey(AirKey airKey) =>
+        airKey == AirKey.RightShiftTap ? AirKey.RightCtrlTap : AirKey.RightShiftTap;
+
     public static string Label(AirKey key) => key switch
     {
         AirKey.RightShiftTap => "Tap Right Shift",

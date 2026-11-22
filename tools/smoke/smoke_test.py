@@ -274,6 +274,19 @@ def run(air_pid, tgt_pid, pids):
     time.sleep(max(0.0, pressed_at + 4.6 - time.time()))  # the 4 s are what this check measures
     check('pick mode closes after 4 s without a key', opened and not picking(), status())
 
+    # the off key: a capital with Right Shift types; a tap of Right Shift alone puts AIR to sleep, the AIR key wakes it
+    guard(pids); wi.chord('rshift', 'a')
+    time.sleep(0.6)  # nothing to wait for: the check is that the bubble stays
+    check('a capital with Right Shift is not the off key', wi.user32.IsWindowVisible(bub), status())
+    guard(pids); wi.press('rshift')
+    check('a tap of Right Shift puts AIR to sleep and hides the bubble',
+          within(3, lambda: not wi.user32.IsWindowVisible(bub)))
+    guard(pids); wi.type_text(' ok')
+    time.sleep(2)  # nothing to wait for: the check is that no bubble comes back while AIR sleeps
+    check('typing while AIR sleeps shows nothing', not wi.user32.IsWindowVisible(bub))
+    guard(pids); wi.press('rctrl')
+    check('the AIR key wakes AIR and the bubble is back', within(3, lambda: wi.user32.IsWindowVisible(bub)), status())
+
     # drag the bubble: follow turns off; the arrow turns it back on
     air_label = find(ui(), lambda e: e['type'] == 'Text' and e['name'] == 'AIR', 'the AIR label of the bubble')
     x, y = center(air_label)

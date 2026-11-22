@@ -21,6 +21,12 @@ public class OllamaClientTests
     private static OllamaClient Client(FakeHttp http, string endpoint = "http://localhost:11434") =>
         new("qwen2.5:7b", endpoint, new HttpClient(http));
 
+    private static string? PromptOf(string body)
+    {
+        using var doc = JsonDocument.Parse(body);
+        return doc.RootElement.GetProperty("prompt").GetString();
+    }
+
     [Fact]
     public async Task A_version_streams_in_shaped_and_stops_at_done()
     {
@@ -49,6 +55,37 @@ public class OllamaClientTests
         Assert.True(root.GetProperty("stream").GetBoolean());
         Assert.Equal(OllamaClient.KeepAlive, root.GetProperty("keep_alive").GetString());
         Assert.Equal(0, root.GetProperty("options").GetProperty("temperature").GetDouble());
+    }
+
+    [Fact]
+    public async Task A_version_that_left_English_is_asked_for_once_more_saying_so()
+    {
+        // what qwen2.5:7b answered for Ornate on this sentence on 2026-11-22, and then its retry
+        const string sentence = "e a 7 opção que usa girias novas, dá?";
+        string[] answers =
+        [
+            """{"response":"and the seventh option, which employs新颖的俚语, does it offer?","done":true}""",
+            """{"response":"And the seventh option, employing fresh slang, does it?","done":true}""",
+        ];
+        int n = 0;
+        var http = new FakeHttp(_ => FakeHttp.Response(HttpStatusCode.OK, answers[n++]));
+
+        string text = await Client(http).RewriteAsync(sentence, Tone.Ornate, _ => { }, CancellationToken.None);
+
+        Assert.Equal("and the seventh option, employing fresh slang, does it?", text);
+        Assert.Equal([Prompts.For(Tone.Ornate, sentence), Prompts.For(Tone.Ornate, sentence, retry: true)],
+            http.Requests.Select(r => PromptOf(r.Body)));
+    }
+
+    [Fact]
+    public async Task A_second_drift_goes_back_to_the_app_to_hide_with_no_third_request()
+    {
+        var http = FakeHttp.Always(HttpStatusCode.OK, """{"response":"and the seventh option, which employs新颖的俚语","done":true}""");
+
+        string text = await Client(http).RewriteAsync("e a 7 opção que usa girias novas", Tone.Ornate, _ => { }, CancellationToken.None);
+
+        Assert.True(TextShape.HasForeignLetters(text));
+        Assert.Equal(2, http.Requests.Count);
     }
 
     [Theory]

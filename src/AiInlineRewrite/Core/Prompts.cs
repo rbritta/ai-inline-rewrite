@@ -63,18 +63,47 @@ public static class Prompts
         "word, name, day and fact as it is and only fix mistakes. Never add a new clause, request, offer or " +
         "thanks, and do not apologize for the user.";
 
+    // The examples are sentences the samples of docs/PROMPTS.md do not hold, so a run never just copies an example.
+    // "never add a new idea": without it, a 7B model appended feelings ("the new options I'm totally stoked about").
+    private const string Slang =
+        "You are a native English speaker texting a friend. Say the sentence the way people really talk today, " +
+        "with casual contractions and common everyday slang where they fit, such as gonna, wanna, gotta, kinda, " +
+        "y'all, super, totally, for sure, no worries, my bad, grab, hang out (for example, \"this movie was really " +
+        "good and I want to watch it again\" becomes \"this movie was super good and I wanna watch it again\"). " +
+        "Keep it natural, friendly and never vulgar. Keep the exact meaning and every name, day and fact; never " +
+        "add a new idea, feeling or reaction.";
+
+    // A short list on purpose: given "vibe", "slay", "bet" or "fire", a 7B model bent the meaning to fit them ("I'll
+    // dm you the file" for "send me the file"), and "who does what to whom" stops it swapping the subject.
+    private const string Trendy =
+        "You are a Gen Z native English speaker texting a friend. Translate or rewrite the sentence faithfully " +
+        "into casual English, every word of it, keeping who does what to whom exactly as written, and add one or " +
+        "two pieces of the newest internet slang where they fit naturally: ngl, lowkey, highkey, fr, deadass, no " +
+        "cap. Examples: \"this movie was really good and I want to watch it again\" becomes \"ngl this movie was " +
+        "so good and I lowkey wanna watch it again\"; \"me liga quando chegar em casa\" becomes \"call me when " +
+        "you get home fr\"; \"I am really tired today\" becomes \"I'm deadass so tired today\". Never stack slang " +
+        "words, never add a new idea, feeling or reaction, and keep it grammatical and never vulgar. Keep every " +
+        "name, day and fact.";
+
+    // The second try after a version came back with letters of another alphabet: told outright, qwen2.5:7b writes
+    // English where at temperature 0 it would drift the same way again (Ornate, "e a 7 opção que usa girias novas").
+    private const string BackToEnglish =
+        " Your last answer switched to another language, such as Chinese, in the middle. Write every word in " +
+        "English, using only the letters a to z.";
+
     /// <summary>
     /// The whole prompt as one completion text, for Ollama's /api/generate: the instructions, the sentence, and the
-    /// label the answer is written after ("Corrected:").
+    /// label the answer is written after ("Corrected:"). <paramref name="retry"/>: the second try after the first
+    /// answer left English (<see cref="TextShape.HasForeignLetters"/>), which says so to the model.
     /// </summary>
-    public static string For(Tone tone, string sentence) =>
-        Instructions(tone, sentence) + "\n\n" + Input(sentence) + "\n" + Label(tone) + ":";
+    public static string For(Tone tone, string sentence, bool retry = false) =>
+        Instructions(tone, sentence, retry) + "\n\n" + Input(sentence) + "\n" + Label(tone) + ":";
 
     /// <summary>
     /// What the model must do for <paramref name="tone"/>: the role, the language line (which depends on whether the
     /// sentence looks Portuguese) and the shape rules. Claude gets this as its system prompt.
     /// </summary>
-    public static string Instructions(Tone tone, string sentence)
+    public static string Instructions(Tone tone, string sentence, bool retry = false)
     {
         string role = tone switch
         {
@@ -82,9 +111,11 @@ public static class Prompts
             Tone.Polished => Polished,
             Tone.Ornate => Ornate,
             Tone.Diplomatic => Diplomatic,
+            Tone.Slang => Slang,
+            Tone.Trendy => Trendy,
             _ => Casual,
         };
-        return role + (Lang.LooksPortuguese(sentence) ? FromPortuguese : FromAny) + Shape;
+        return role + (retry ? BackToEnglish : "") + (Lang.LooksPortuguese(sentence) ? FromPortuguese : FromAny) + Shape;
     }
 
     /// <summary>The sentence as the model reads it. Claude gets this as the user message.</summary>
@@ -97,6 +128,8 @@ public static class Prompts
         Tone.Polished => "Polished",
         Tone.Ornate => "Rewritten",
         Tone.Diplomatic => "Diplomatic",
+        Tone.Slang => "Slang",
+        Tone.Trendy => "Trendy",
         _ => "Corrected",
     };
 }

@@ -6,20 +6,22 @@ Every tone is one prompt to the model, built in
 (`Prompts.Instructions`) and the sentence as the user message (`Prompts.Input`). The answer then goes through
 `TextShape`, which keeps the first line, drops an echoed label or quotes, drops a second sentence the user never typed,
 and gives the answer the user's own final punctuation and first-letter case. A version with letters outside the Latin
-alphabet is never offered (`TextShape.HasForeignLetters`).
+alphabet is asked for once more, with a line telling the model it left English (Ollama only, `Prompts.For` with
+`retry`), and never offered if it drifts again (`TextShape.HasForeignLetters`).
 
 ## How a prompt is built
 
 1. **The tone's role.** What the tone does and what it must not do (Casual fixes only real mistakes and keeps slang;
    Concise cuts hedges and filler but keeps the grammar; Polished reads fuller in plain words; Ornate is literary;
-   Diplomatic turns an insult into a calm sentence about how the writer feels).
+   Diplomatic turns an insult into a calm sentence about how the writer feels; Slang talks the way people do today;
+   Trendy adds one or two pieces of the newest internet slang to a faithful version).
 2. **The language line.** When `Lang.LooksPortuguese` says the sentence is Portuguese, the prompt says so outright
    and forbids keeping a Portuguese word or switching to another language. Otherwise a softer line asks to translate
    anything that is not English.
 3. **The shape line.** No added final punctuation, the first letter in the user's case (the word I always a capital),
    English only, one sentence, no quotes, labels or explanation.
-4. **The sentence and a label** (`Corrected:`, `Concise:`, `Polished:`, `Rewritten:` or `Diplomatic:`) for the model
-   to complete.
+4. **The sentence and a label** (`Corrected:`, `Concise:`, `Polished:`, `Rewritten:`, `Diplomatic:`, `Slang:` or
+   `Trendy:`) for the model to complete.
 
 ## Check a change
 
@@ -30,7 +32,11 @@ request at a time, and prints the tables below (the timings go to the error stre
 dotnet run --project tools/ToneCheck -c Release
 dotnet run --project tools/ToneCheck -c Release -- --model llama3.1:8b --endpoint http://localhost:11434
 dotnet run --project tools/ToneCheck -c Release -- --engine claude --model claude-sonnet-5-5
+dotnet run --project tools/ToneCheck -c Release -- --sentence "e a 7 opção que usa girias novas, dá?" --tone Ornate
 ```
+
+`--sentence` and `--tone` repeat, and replace the samples and the tones: the way to reproduce a sentence a user
+reported.
 
 A prompt change comes with a new run here. Temperature is 0, so runs are close to repeatable but not exactly: on the
 reference machine's GPU ([ENGINES.md](ENGINES.md#reference-machine)), two runs on the same day with the same prompts
@@ -55,6 +61,18 @@ Three other Ollama models went through the same run on the reference machine; th
 
 What is still soft: Casual and Concise agree when there is nothing to cut, Polished sometimes equals Concise on short
 sentences, and "any doubt" (a Portuguese speaker's "question") becomes "any doubts" in most tones.
+
+## What the tuning fixed (2026-11-22, qwen2.5:7b, v0.2.0)
+
+| Problem | Fix |
+|---|---|
+| Ornate wrote "新颖的俚语" for "gírias novas" in "e a 7 opção que usa girias novas, dá?", a sentence a user typed; at temperature 0 the same prompt drifts again, so the bubble kept showing an error. A line in the Ornate prompt ("every word must be an English word") did not help | a version with non-Latin letters is asked for once more with a line saying the last answer switched to another language: "And the seventh option, employing fresh slang, does it?". Sampling at temperature 0.5 instead fixed it in 2 of 5 seeds |
+| The first Slang prompt appended feelings ("the new options I'm totally stoked about") | "never add a new idea, feeling or reaction" |
+| The first Trendy prompt, with a long list (it's giving, vibe, slay, bet, fire), stacked slang and bent the meaning ("I'm fr real deadass thinkin' you gotta work on your vibes bro" for "você é um idiota!", "I'll dm you the file" for "Me manda o arquivo") | a short list (ngl, lowkey, highkey, fr, deadass, no cap), "keeping who does what to whom exactly as written", and three examples |
+
+What is still soft in Trendy: "fr" closes most versions, and on "acho que a gente precisa conversar sobre o prazo
+amanhã" every prompt tried kept "amanhã" or garbled it ("amanhakay"); dropping the Portuguese example did not fix it
+and made Trendy swap who sends the file as well. A larger model should do better; none was tried yet.
 
 ## Another language pair
 
@@ -265,3 +283,130 @@ code of this release.
 | Polished | thank you for your help, you really made my day |
 | Ornate | I thank you for your assistance, for you have rescued my day |
 | Diplomatic | I appreciate your help, you made my day |
+
+## After: the prompts in v0.2.0
+
+Model `qwen2.5:7b` in Ollama 0.40.16, temperature 0, the ten samples through the seven tones, 70 versions in 9.4 s on
+the [reference machine](ENGINES.md#reference-machine)'s 12 GB GPU, none outside English (no retry was needed). Run
+on 2026-11-22 with the code of this release. Only the Slang and Trendy prompts are new; the other five are the
+v0.1.0 prompts.
+
+#### acho que a gente precisa conversar sobre o prazo amanhã
+
+| Tone | Version |
+|---|---|
+| Casual | I think we need to talk about the deadline tomorrow |
+| Concise | we need to talk about the deadline tomorrow |
+| Polished | I think we need to have a conversation about the deadline tomorrow |
+| Ornate | I believe that we must engage in a discourse concerning the timeframe tomorrow |
+| Diplomatic | I feel we need to discuss the deadline tomorrow |
+| Slang | I think we gotta chat about the deadline tomorrow |
+| Trendy | I think we need to chat about the deadline amanhakay fr |
+
+#### você é um idiota!
+
+| Tone | Version |
+|---|---|
+| Casual | you're an idiot! |
+| Concise | you are an idiot! |
+| Polished | you are an idiot! |
+| Ornate | you are a fool! |
+| Diplomatic | I feel this isn't constructive! |
+| Slang | you're a total idiot! |
+| Trendy | you're a real idiot fr! |
+
+#### i dont think we can finish this until friday
+
+| Tone | Version |
+|---|---|
+| Casual | I don't think we can finish this until Friday |
+| Concise | we can't finish this until Friday |
+| Polished | I don't think we'll be able to finish this until Friday |
+| Ornate | I do not believe we shall be able to conclude this endeavor until Friday |
+| Diplomatic | I believe we may need until Friday to finish this |
+| Slang | I don't think we can finish this until Friday |
+| Trendy | I don't think we can finish this until Friday fr |
+
+#### can you send me the report until tomorrow?
+
+| Tone | Version |
+|---|---|
+| Casual | can you send me the report by tomorrow? |
+| Concise | can you send me the report by tomorrow? |
+| Polished | could you send me the report by tomorrow? |
+| Ornate | could you kindly transmit the report to me by tomorrow? |
+| Diplomatic | can you send me the report by tomorrow? |
+| Slang | can you send me the report by tomorrow, for sure? |
+| Trendy | can you send me the report until tomorrow, fr? |
+
+#### we gonna need more time to fix this bug
+
+| Tone | Version |
+|---|---|
+| Casual | we're gonna need more time to fix this bug |
+| Concise | we are going to need more time to fix this bug |
+| Polished | we are going to need more time to fix this bug |
+| Ornate | we are going to require a greater allocation of time in order to adequately address and resolve this particular bug |
+| Diplomatic | I believe we will need some additional time to fix this bug |
+| Slang | we're gonna need more time to fix this bug |
+| Trendy | ngl we gonna need more time to fix this bug fr |
+
+#### o cliente reclamou de novo, isso é ridículo
+
+| Tone | Version |
+|---|---|
+| Casual | the customer complained again, that's ridiculous |
+| Concise | the customer complained again, that is ridiculous |
+| Polished | the customer complained again, and that is really ridiculous |
+| Ornate | the client once more voiced his complaint, an assertion undeniably preposterous |
+| Diplomatic | I find the client's repeated complaint to be unreasonable |
+| Slang | the customer's complaining again, like that's super ridiculous |
+| Trendy | I'm fr the customer complained again, that's so ridiculous |
+
+#### please let me know if you have any doubt.
+
+| Tone | Version |
+|---|---|
+| Casual | please let me know if you have any doubts. |
+| Concise | please let me know if you have any doubt. |
+| Polished | please let me know if you have any doubts at all. |
+| Ornate | kindly inform me if you harbor any uncertainty or query. |
+| Diplomatic | please let me know if you have any doubts. |
+| Slang | please let me know if you got any doubt. |
+| Trendy | ngl, just let me know if you have any doubts fr. |
+
+#### Me manda o arquivo quando puder
+
+| Tone | Version |
+|---|---|
+| Casual | Send me the file when you can |
+| Concise | Send me the file when you can |
+| Polished | Could you send me the file when you have a moment |
+| Ornate | When you are able, I beseech you to convey the document to me |
+| Diplomatic | I would appreciate it if you could send me the file when you have a moment |
+| Slang | Send me the file when you can |
+| Trendy | Send me the file when you can fr |
+
+#### não sei se vai dar tempo de entregar tudo hoje
+
+| Tone | Version |
+|---|---|
+| Casual | I don't know if there'll be time to deliver everything today |
+| Concise | I don't know if we'll have time to deliver everything today |
+| Polished | I'm not sure if there will be enough time to deliver everything today |
+| Ornate | I am uncertain whether there shall be sufficient time to deliver all of it today |
+| Diplomatic | I am concerned we might not have enough time to deliver everything today |
+| Slang | I don't know if we'll gonna have time to get everything done today |
+| Trendy | I don't know if I'll have time to get everything done today fr |
+
+#### obrigado pela ajuda, você salvou meu dia
+
+| Tone | Version |
+|---|---|
+| Casual | thanks for the help, you saved my day |
+| Concise | thank you for the help, you saved my day |
+| Polished | thank you for your help, you saved my day |
+| Ornate | thankful for your assistance, you have rescued my day |
+| Diplomatic | I appreciate your help, you made my day |
+| Slang | thanks for the help, you totally saved my day |
+| Trendy | ngl, you really saved my day, fr |
