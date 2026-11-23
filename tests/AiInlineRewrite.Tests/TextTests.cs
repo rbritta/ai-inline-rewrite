@@ -6,8 +6,15 @@ namespace AiInlineRewrite.Tests;
 public class SentenceTests
 {
     [Theory]
-    [InlineData("Hi there. i dont think so", "i dont think so")]          // the sentence being typed
+    [InlineData("Hi there. I dont think so", "I dont think so")]          // the sentence being typed
     [InlineData("Hi there. I don't think so.", "I don't think so.")]       // a finished one, with its period
+    [InlineData("éé, talvez seja melhor não alimentar expectativas!! mas nada impede de continuar curtindo",
+        "éé, talvez seja melhor não alimentar expectativas!! mas nada impede de continuar curtindo")] // a lowercase word goes on
+    [InlineData("ok. vamos lá", "ok. vamos lá")]
+    [InlineData("Sim. É isso mesmo", "É isso mesmo")]                      // a Portuguese capital starts one
+    [InlineData("o valor é 3.5 mil e o site.com", "o valor é 3.5 mil e o site.com")] // no space after the mark
+    [InlineData("Talk to Mr. Smith today", "Talk to Mr. Smith today")]
+    [InlineData("Done! \"Next one\" please", "\"Next one\" please")]
     [InlineData("First line\nsecond line here", "second line here")]
     [InlineData("Are you there?   ", "Are you there?")]
     [InlineData("", "")]

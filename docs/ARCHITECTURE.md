@@ -24,8 +24,9 @@ keyboard hook ──> AppController ──(pause)──> FocusedText (UI Automat
    and restarts the pause timer (`DebounceMs`, 700 ms). Navigation keys and shortcuts do not.
 2. **The pause.** `FocusedText.TryRead` asks UI Automation for the focused element on a worker thread: its text
    (ValuePattern, else TextPattern), the caret rectangle (the TextPattern selection) and `IsPassword`. A password
-   field stops here. `Sentence.ExtractCurrent` takes the last sentence; `IsWorthRewriting` wants two words and a
-   letter. The same sentence as last time restores the cached rows instead of asking again.
+   field stops here. `Sentence.ExtractCurrent` takes the last sentence: the text after the last line break, or after
+   the last ". ! ?" followed by a space and a capital (an end mark before a lowercase word, as in chat, goes on);
+   `IsWorthRewriting` wants two words and a letter. The same sentence as last time restores the cached rows instead of asking again.
 3. **Rewrite.** `Lang.LooksPortuguese` decides how the rows render (a translation as plain text, a correction as a
    `WordDiff` against what was typed) and which language line the prompts get. One `IRewriteEngine.RewriteAsync` per
    enabled tone runs at once (see *Engines* below); every partial answer goes through `TextShape.MatchPunctuation`

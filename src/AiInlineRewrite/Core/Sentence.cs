@@ -1,34 +1,27 @@
+using System.Text.RegularExpressions;
+
 namespace AiInlineRewrite.Core;
 
 /// <summary>
 /// The sentence the user is typing. Typing happens at the end of the field, so it is the text after the last
-/// sentence terminator; except right after a finished sentence (". ! ?"), where it is that whole sentence with its
-/// punctuation, not the empty tail after it.
+/// sentence break, with the end marks the user typed. A break is a line break, or ". ! ?" followed by a space and a
+/// capital letter; an end mark before a lowercase word ("expectativas!! mas nada...", the way many people write in
+/// chat) or with no space after it ("3.5", "site.com") does not end the sentence.
 /// </summary>
-public static class Sentence
+public static partial class Sentence
 {
-    private static readonly char[] Terminators = ['.', '!', '?', '\n', '\r'];
-    private static readonly char[] EndPunct = ['.', '!', '?'];
+    // "Mr. Smith" is not a break; Portuguese capitals (É, Á) start a sentence too.
+    [GeneratedRegex(@"(?<!\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Sra|Jr|St|vs|etc))[.!?]+[ \t]+(?=[""“]?\p{Lu})|[\r\n]+")]
+    private static partial Regex Break();
 
     public static string ExtractCurrent(string fullText)
     {
         if (string.IsNullOrEmpty(fullText)) return string.Empty;
 
         string t = fullText.TrimEnd();
-        if (t.Length == 0) return string.Empty;
-
-        // Finished sentence: keep it whole, with its trailing . ! or ?
-        if (Array.IndexOf(EndPunct, t[^1]) >= 0)
-        {
-            int from = t.Length - 2;
-            int prev = from >= 0 ? t.LastIndexOfAny(Terminators, from) : -1;
-            return t[(prev + 1)..].TrimStart();
-        }
-
-        // In-progress sentence: the fragment after the last terminator.
-        int cut = t.LastIndexOfAny(Terminators);
-        string current = cut >= 0 ? t[(cut + 1)..] : t;
-        return current.TrimStart();
+        int start = 0;
+        foreach (Match m in Break().Matches(t)) start = m.Index + m.Length;
+        return t[start..].TrimStart();
     }
 
     /// <summary>

@@ -62,6 +62,14 @@ public class TextShapeTests
     public void Two_typed_sentences_keep_two_in_the_answer()
         => Assert.Equal("Done. Ship it", TextShape.FirstSentence("done. Ship it", "Done. Ship it"));
 
+    [Fact]
+    public void A_typed_end_mark_before_a_lowercase_word_keeps_both_parts_of_the_answer()
+    {
+        const string typed = "éé, talvez seja melhor não alimentar expectativas!! mas nada impede de continuar curtindo";
+        const string answer = "Yeah, maybe it's better not to get your hopes up!! But nothing stops you from enjoying it";
+        Assert.Equal(answer, TextShape.FirstSentence(typed, answer));
+    }
+
     [Theory]
     [InlineData("I posit that we ought to engage in discourse concerning the时限问题", true)]
     [InlineData("привет", true)]

@@ -6,7 +6,13 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-22
+
 ### Fixed
+- An end mark before a lowercase word no longer ends the sentence: in "éé, talvez seja melhor não alimentar
+  expectativas!! mas nada impede de continuar curtindo", AIR rewrote only the part after "!!". A new sentence now
+  starts after a line break, or after ". ! ?" followed by a space and a capital letter (Portuguese capitals too), and
+  "3.5" or "site.com" no longer split a sentence. An answer keeps both parts when the user typed both.
 - The desktop smoke test failed at the start when the user had left AIR asleep or off: it now starts AIR awake and
   puts the user's settings back at the end.
 

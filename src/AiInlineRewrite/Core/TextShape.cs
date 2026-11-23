@@ -22,6 +22,11 @@ public static partial class TextShape
     [GeneratedRegex(@"(?<!\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|etc|e\.g|i\.e))[.!?]+(?=\s+[""“]?[A-Z])")]
     private static partial Regex SentenceBreak();
 
+    // An end mark inside what the user typed, before more words in any case ("expectativas!! mas nada"): the user wrote
+    // more than one sentence, so the answer may hold more than one too.
+    [GeneratedRegex(@"[.!?]+\s+[""“]?\p{L}")]
+    private static partial Regex InnerEnd();
+
     private static bool IsEnd(char c) => c is '.' or '!' or '?';
 
     /// <summary>
@@ -61,7 +66,7 @@ public static partial class TextShape
     /// </summary>
     public static string FirstSentence(string original, string text)
     {
-        if (SentenceBreak().IsMatch(original.Trim())) return text;
+        if (InnerEnd().IsMatch(original.Trim())) return text;
         var m = SentenceBreak().Match(text);
         return m.Success ? text[..(m.Index + m.Length)] : text;
     }
