@@ -6,6 +6,10 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- The desktop smoke test failed at the start when the user had left AIR asleep or off: it now starts AIR awake and
+  puts the user's settings back at the end.
+
 ## [0.2.0] - 2026-11-22
 
 ### Added

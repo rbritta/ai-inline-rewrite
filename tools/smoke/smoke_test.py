@@ -16,6 +16,7 @@ and this PC has no Anthropic credential; otherwise they print SKIP.
 """
 import ctypes
 import ctypes.wintypes as W
+import json
 import os
 import shutil
 import subprocess
@@ -112,6 +113,17 @@ def shot(name, box=None):
     ImageGrab.grab(bbox=box, all_screens=True).save(os.path.join(OUT, name))
 
 
+def wake(path):
+    """AIR asleep (a Right Shift tap, or off in the tray) shows no bubble, so the run starts it awake; the backup puts
+    the user's state back at the end."""
+    with open(path, encoding='utf-8-sig') as f:
+        s = json.load(f)
+    if s.get('On') is False:
+        s['On'] = True
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(s, f, indent=2)
+
+
 def main():
     if not desktop_unlocked():
         print('The desktop is locked: nothing to drive. Unlock it and run again.')
@@ -121,6 +133,7 @@ def main():
     if os.path.exists(SETTINGS):
         backup = os.path.join(OUT, 'settings.backup.json')
         shutil.copyfile(SETTINGS, backup)
+        wake(SETTINGS)
 
     air = subprocess.Popen([EXE, '--accept-injected'])
     tgt = subprocess.Popen(['powershell', '-NoProfile', '-STA', '-ExecutionPolicy', 'Bypass', '-File', os.path.join(HERE, 'target.ps1')])
