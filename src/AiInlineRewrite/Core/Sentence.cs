@@ -5,7 +5,7 @@ namespace AiInlineRewrite.Core;
 /// <summary>
 /// The sentence the user is typing. Typing happens at the end of the field, so it is the text after the last
 /// sentence break, with the end marks the user typed. A break is a line break, or ". ! ?" followed by a space and a
-/// capital letter; an end mark before a lowercase word ("expectativas!! mas nada...", the way many people write in
+/// capital letter; an end mark before a lowercase word ("corrido!! mas amanhã...", the way many people write in
 /// chat) or with no space after it ("3.5", "site.com") does not end the sentence.
 /// </summary>
 public static partial class Sentence

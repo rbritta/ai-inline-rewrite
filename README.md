@@ -62,6 +62,7 @@ AIR asks a language model for each version, through one of two engines:
 [docs/ENGINES.md](docs/ENGINES.md) has the reference machine and what was measured on it (memory, speed, three other
 Ollama models), how long Ollama keeps the model loaded and how to free it, the Claude models and setup, other
 backends, Docker, and the platforms. The Claude engine was tested only against a fake Anthropic API so far.
+[docs/MODELS.md](docs/MODELS.md) compares eight Ollama models: quality judged blind, speed, size and license.
 
 ## Install
 

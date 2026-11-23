@@ -8,8 +8,10 @@ using AiInlineRewrite.Llm;
 //   dotnet run --project tools/ToneCheck -c Release -- --model llama3.1:8b --endpoint http://localhost:11434
 //   dotnet run --project tools/ToneCheck -c Release -- --engine claude --model claude-sonnet-5-5
 //   dotnet run --project tools/ToneCheck -c Release -- --sentence "a sentence a user reported" --tone Ornate
+//   dotnet run --project tools/ToneCheck -c Release -- --dump-prompts prompts.json
 // Every option is optional; the defaults are the app's. --sentence and --tone repeat, and replace the samples and
-// the tones. Claude needs ANTHROPIC_API_KEY and bills the account.
+// the tones. --dump-prompts writes the Ollama prompts as JSON and calls no engine. Claude needs ANTHROPIC_API_KEY and
+// bills the account.
 Console.OutputEncoding = System.Text.Encoding.UTF8; // redirected to a file, the console would write the OEM code page
 var settings = new Settings
 {
@@ -39,6 +41,16 @@ if (Args("--sentence") is { Length: > 0 } given) samples = given;
 IReadOnlyList<Tone> tones = Args("--tone") is { Length: > 0 } named
     ? [.. named.Select(t => Enum.Parse<Tone>(t, ignoreCase: true))]
     : Tones.All;
+
+// --dump-prompts file.json: the exact completion prompts the app sends to Ollama, for a benchmark that sets its own
+// options (CPU only, fewer threads); nothing is sent to any engine.
+if (Arg("--dump-prompts") is { } dump)
+{
+    var prompts = samples.SelectMany(s => tones.Select(t => new { sentence = s, tone = t.ToString(), prompt = Prompts.For(t, s) }));
+    File.WriteAllText(dump, System.Text.Json.JsonSerializer.Serialize(prompts));
+    Console.Error.WriteLine($"{samples.Length * tones.Count} prompts written to {dump}");
+    return 0;
+}
 
 var engine = RewriteEngines.Create(settings);
 var state = await engine.CheckAsync(CancellationToken.None);

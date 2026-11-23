@@ -86,7 +86,7 @@ public static class Prompts
         "name, day and fact.";
 
     // The second try after a version came back with letters of another alphabet: told outright, qwen2.5:7b writes
-    // English where at temperature 0 it would drift the same way again (Ornate, "e a 7 opção que usa girias novas").
+    // English where at temperature 0 it would drift the same way again (Ornate, on a question with "gírias novas").
     private const string BackToEnglish =
         " Your last answer switched to another language, such as Chinese, in the middle. Write every word in " +
         "English, using only the letters a to z.";

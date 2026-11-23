@@ -32,11 +32,12 @@ request at a time, and prints the tables below (the timings go to the error stre
 dotnet run --project tools/ToneCheck -c Release
 dotnet run --project tools/ToneCheck -c Release -- --model llama3.1:8b --endpoint http://localhost:11434
 dotnet run --project tools/ToneCheck -c Release -- --engine claude --model claude-sonnet-5-5
-dotnet run --project tools/ToneCheck -c Release -- --sentence "e a 7 opção que usa girias novas, dá?" --tone Ornate
+dotnet run --project tools/ToneCheck -c Release -- --sentence "vc viu o email que te mandei ontem?" --tone Ornate
 ```
 
 `--sentence` and `--tone` repeat, and replace the samples and the tones: the way to reproduce a sentence a user
-reported.
+reported. `--dump-prompts prompts.json` writes the exact prompts the app sends to Ollama (sentence, tone, prompt)
+and calls no engine, for a benchmark that sets its own options, as in [MODELS.md](MODELS.md#speed).
 
 A prompt change comes with a new run here. Temperature is 0, so runs are close to repeatable but not exactly: on the
 reference machine's GPU ([ENGINES.md](ENGINES.md#reference-machine)), two runs on the same day with the same prompts
@@ -66,8 +67,8 @@ sentences, and "any doubt" (a Portuguese speaker's "question") becomes "any doub
 
 | Problem | Fix |
 |---|---|
-| Ornate wrote "新颖的俚语" for "gírias novas" in "e a 7 opção que usa girias novas, dá?", a sentence a user typed; at temperature 0 the same prompt drifts again, so the bubble kept showing an error. A line in the Ornate prompt ("every word must be an English word") did not help | a version with non-Latin letters is asked for once more with a line saying the last answer switched to another language: "And the seventh option, employing fresh slang, does it?". Sampling at temperature 0.5 instead fixed it in 2 of 5 seeds |
-| The first Slang prompt appended feelings ("the new options I'm totally stoked about") | "never add a new idea, feeling or reaction" |
+| Ornate wrote Chinese ("新颖的俚语") for "gírias novas" (new slang) in a Portuguese question; at temperature 0 the same prompt drifts again, so the bubble kept showing an error. A line in the Ornate prompt ("every word must be an English word") did not help | a version with non-Latin letters is asked for once more with a line saying the last answer switched to another language, and the retry came back all in English. Sampling at temperature 0.5 instead fixed it in 2 of 5 seeds |
+| The first Slang prompt appended a feeling the sentence did not have ("I'm totally stoked about") | "never add a new idea, feeling or reaction" |
 | The first Trendy prompt, with a long list (it's giving, vibe, slay, bet, fire), stacked slang and bent the meaning ("I'm fr real deadass thinkin' you gotta work on your vibes bro" for "você é um idiota!", "I'll dm you the file" for "Me manda o arquivo") | a short list (ngl, lowkey, highkey, fr, deadass, no cap), "keeping who does what to whom exactly as written", and three examples |
 
 What is still soft in Trendy: "fr" closes most versions, and on "acho que a gente precisa conversar sobre o prazo

@@ -67,6 +67,9 @@ Ollama on another machine (`http://gpu-box:11434`); the sentence then travels th
 
 ### Other models
 
+[MODELS.md](MODELS.md) compares eight models by blind-judged quality, speed on the GPU and the CPU, size and
+license (2026-11-23), and measures llama.cpp running inside a .NET process next to Ollama.
+
 Results on the reference machine, 2026-11-21: `tools/ToneCheck` with the app's prompts, the ten samples through all
 five tones (50 versions, one at a time), each model loaded alone and stopped after its run.
 

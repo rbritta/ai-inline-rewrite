@@ -22,7 +22,7 @@ public static partial class TextShape
     [GeneratedRegex(@"(?<!\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|etc|e\.g|i\.e))[.!?]+(?=\s+[""“]?[A-Z])")]
     private static partial Regex SentenceBreak();
 
-    // An end mark inside what the user typed, before more words in any case ("expectativas!! mas nada"): the user wrote
+    // An end mark inside what the user typed, before more words in any case ("corrido!! mas amanhã"): the user wrote
     // more than one sentence, so the answer may hold more than one too.
     [GeneratedRegex(@"[.!?]+\s+[""“]?\p{L}")]
     private static partial Regex InnerEnd();

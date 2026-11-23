@@ -65,8 +65,8 @@ public class TextShapeTests
     [Fact]
     public void A_typed_end_mark_before_a_lowercase_word_keeps_both_parts_of_the_answer()
     {
-        const string typed = "éé, talvez seja melhor não alimentar expectativas!! mas nada impede de continuar curtindo";
-        const string answer = "Yeah, maybe it's better not to get your hopes up!! But nothing stops you from enjoying it";
+        const string typed = "nossa, hoje foi corrido!! mas amanhã a gente conversa melhor";
+        const string answer = "Wow, today was hectic!! But we can talk properly tomorrow";
         Assert.Equal(answer, TextShape.FirstSentence(typed, answer));
     }
 

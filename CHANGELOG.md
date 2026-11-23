@@ -6,11 +6,17 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- `docs/MODELS.md`: eight Ollama models compared on the reference machine (quality judged blind over 896 versions,
+  speed on the GPU and on the CPU alone, size, video memory, license), and llama.cpp inside a .NET process measured
+  next to Ollama.
+- `tools/ToneCheck --dump-prompts file.json` writes the exact prompts the app sends to Ollama, without calling it.
+
 ## [0.2.1] - 2026-11-22
 
 ### Fixed
-- An end mark before a lowercase word no longer ends the sentence: in "éé, talvez seja melhor não alimentar
-  expectativas!! mas nada impede de continuar curtindo", AIR rewrote only the part after "!!". A new sentence now
+- An end mark before a lowercase word no longer ends the sentence: in a sentence such as "nossa, hoje foi
+  corrido!! mas amanhã a gente conversa melhor", AIR rewrote only the part after "!!". A new sentence now
   starts after a line break, or after ". ! ?" followed by a space and a capital letter (Portuguese capitals too), and
   "3.5" or "site.com" no longer split a sentence. An answer keeps both parts when the user typed both.
 - The desktop smoke test failed at the start when the user had left AIR asleep or off: it now starts AIR awake and
@@ -29,8 +35,8 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The desktop smoke test checks the Right Shift tap, a capital with Right Shift, and waking with the AIR key.
 
 ### Fixed
-- A version that drifted into another alphabet mid-sentence (Ornate wrote Chinese for "gírias" in "e a 7 opção que
-  usa girias novas, dá?") showed only an error. The Ollama engine now asks once more, telling the model it left
+- A version that drifted into another alphabet mid-sentence (Ornate wrote Chinese for "gírias novas" in a
+  Portuguese question) showed only an error. The Ollama engine now asks once more, telling the model it left
   English; what still drifts is not offered, as before.
 
 ## [0.1.0] - 2026-11-22
