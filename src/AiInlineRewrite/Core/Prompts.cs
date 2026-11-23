@@ -121,6 +121,21 @@ public static class Prompts
     /// <summary>The sentence as the model reads it. Claude gets this as the user message.</summary>
     public static string Input(string sentence) => "Sentence: " + sentence;
 
+    /// <summary>
+    /// <see cref="For"/> wrapped the way Ollama wraps a completion prompt for <c>qwen2.5:7b</c> (its chat template with
+    /// the model's own system line), for the built-in engine, which runs the same model without Ollama. The same
+    /// wrapping gives the same answers, so the prompts tuned through Ollama hold.
+    /// </summary>
+    public static string Chat(Tone tone, string sentence, bool retry = false) =>
+        "<|im_start|>system\n" + QwenSystem + "<|im_end|>\n<|im_start|>user\n" + For(tone, sentence, retry)
+        + "<|im_end|>\n<|im_start|>assistant\n";
+
+    /// <summary>The tokens that end the model's answer in that template.</summary>
+    public static readonly IReadOnlyList<string> ChatStops = ["<|im_end|>", "<|endoftext|>"];
+
+    // Ollama's SYSTEM line for qwen2.5 (`ollama show qwen2.5:7b --system`).
+    private const string QwenSystem = "You are Qwen, created by Alibaba Cloud. You are a helpful assistant.";
+
     // The word the answer follows in the completion prompt; TextShape.Clean removes it if a model echoes it.
     private static string Label(Tone tone) => tone switch
     {

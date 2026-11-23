@@ -47,7 +47,7 @@ keyboard hook ──> AppController ──(pause)──> FocusedText (UI Automat
 
 `AppController` talks to one `IRewriteEngine` (`Llm/IRewriteEngine.cs`), created by `RewriteEngines.Create` from
 `Settings.Engine`; only that engine exists in the process, so with Claude nothing ever reaches Ollama and the other way
-round. An engine streams a version (`RewriteAsync`), says whether it can write now without spending tokens
+round. The built-in engine lives in the app (`Local/`), so the factory gets it through `RewriteEngines.BuiltIn`. An engine streams a version (`RewriteAsync`), says whether it can write now without spending tokens
 (`CheckAsync`, when it is created) and gets ready (`PreloadAsync`). A new engine or model from the settings window
 takes effect at once (`AppController.SwitchEngine`): the versions in flight are cancelled, the cached ones dropped,
 the new engine created and checked; a check that finishes after another switch is ignored. A failure the user can fix is an `EngineException` with an
@@ -58,6 +58,14 @@ the new engine created and checked; a check that finishes after another switch i
   `ListModelsAsync` reads the same list for the settings window; `PreloadAsync` rewrites a made-up sentence so the
   model is loaded before the first pause. Ollama runs the tones in
   parallel or queues them, depending on its own settings.
+- **`BuiltInEngine`** (`Local/`): llama.cpp in the process through LLamaSharp, with the Vulkan and CPU native builds.
+  `LocalModel` finds the model file (AIR's own download, else Ollama's blob of `qwen2.5:7b`, checked by digest and
+  size); `CheckAsync` says `ModelMissing`, `Downloading` or ready without loading it. The weights load once per process
+  behind a lock (all layers on the GPU, then 16, then the CPU) and are freed after 30 minutes idle. Each version is
+  a fresh stateless run over the ChatML prompt (`Prompts.Chat`), greedy, stopped at `<|im_end|>`. `ModelDownloader`
+  (`Llm/`) fetches the two GGUF parts from Hugging Face with a resumable range request and a SHA-256 check, cuts a
+  connection quiet for a minute, and tries again with a growing wait while tries bring bytes in; `AppController` runs
+  it for the settings window.
 - **`ClaudeClient`**: the official Anthropic SDK (`Anthropic` on NuGet), `Messages.CreateStreaming` with the tone's
   instructions as the system prompt (`Prompts.Instructions`), the sentence as the one user message (`Prompts.Input`),
   `max_tokens` 1024 and low effort, and no sampling parameters, which current models do not take. Text deltas are
@@ -102,7 +110,8 @@ settings.
 
 ## Why the tests link files
 
-The app targets `net9.0-windows` with WPF and WinForms. The tests target plain `net9.0` and compile the `Core` files
-into their own assembly, with the two engine clients in `Llm`, so they need no desktop runtime and every piece of logic
+The app targets `net11.0-windows10.0.19041.0` with WPF and WinForms (the Windows 10 2004 API surface, for the Store
+package's startup task). The tests target plain `net11.0` and compile the `Core` files into their own assembly, with
+the engine clients and the model download in `Llm`, so they need no desktop runtime and every piece of logic
 in `Core` is reachable without a window or a hook. Everything that decides something (which text, which key, which
 version, which settings) lives in `Core`; the rest only wires it to Windows.

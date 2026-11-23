@@ -7,10 +7,34 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **A built-in engine, now the default.** AIR runs Qwen2.5 7B Instruct by itself through LLamaSharp (llama.cpp): on
+  the GPU through Vulkan when there is one, on the CPU otherwise. Nothing else to install: the settings download the
+  model once (4.7 GB, Qwen's official files on Hugging Face, tried again by itself when the connection drops or stalls,
+  resumed where it stopped, and checked against their SHA-256),
+  or AIR uses Ollama's `qwen2.5:7b` when it is already on the PC. On the reference machine it takes a median of 0.45 s
+  a version. The downloaded file is the Qwen team's own 4-bit file, not Ollama's: the two write different versions of
+  two sentences in three, and scored the same in a blind check (`docs/MODELS.md`). It frees the model after 30 minutes
+  without use.
+- On the first run with the built-in engine and no model yet, AIR opens the settings at the download.
+- A Microsoft Store package: the MSIX manifest and icons in `packaging/`, and `tools/pack-msix.ps1`. Each release also
+  keeps an unsigned package. In the package, "Start with Windows" is a Windows startup task.
+- "Report a version" in the tray menu: it opens an issue form on GitHub for a version that was offensive, harmful
+  or otherwise wrong, with AIR's version and engine filled in.
+- `PRIVACY.md`: what AIR reads, where it goes with each engine, and what it keeps.
+- `AiInlineRewrite.exe --check-builtin file.md`: every tone over sample sentences through the built-in engine, with
+  the time of each version.
 - `docs/MODELS.md`: eight Ollama models compared on the reference machine (quality judged blind over 896 versions,
   speed on the GPU and on the CPU alone, size, video memory, license), and llama.cpp inside a .NET process measured
   next to Ollama.
 - `tools/ToneCheck --dump-prompts file.json` writes the exact prompts the app sends to Ollama, without calling it.
+
+### Changed
+- The app, the tests and the tools moved from .NET 9 to .NET 11 (`net11.0-windows10.0.19041.0`, `net11.0`); building
+  needs the .NET 11 SDK, and AIR needs Windows 10 version 2004 or later.
+- The release zip holds a folder (`AiInlineRewrite.exe` and its files) instead of one exe: a single-file .NET 11 WPF
+  app failed to start. It stays self-contained, so running it still needs no .NET install.
+- `Engine` defaults to `BuiltIn`. A settings file written before keeps its engine, and one with no `Engine` keeps
+  Ollama, so an existing install goes on as it was.
 
 ## [0.2.1] - 2026-11-22
 

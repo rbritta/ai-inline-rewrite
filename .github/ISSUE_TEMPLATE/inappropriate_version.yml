@@ -1,0 +1,46 @@
+name: Report a version
+description: A version AIR wrote that is offensive, harmful or otherwise inappropriate.
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting it. AIR's versions are written by a language model, and this is where to tell us when one goes wrong. Issues are public: paste only what you are fine with anyone reading, or describe it instead.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: AIR's version (the tray's "Report a version" fills it in).
+      placeholder: 0.3.0
+    validations:
+      required: true
+  - type: input
+    id: engine
+    attributes:
+      label: Engine and model
+      description: Filled in from the tray, such as "BuiltIn, qwen2.5-7b-instruct-q4_k_m".
+      placeholder: BuiltIn, qwen2.5-7b-instruct-q4_k_m
+    validations:
+      required: true
+  - type: input
+    id: tone
+    attributes:
+      label: Tone
+      placeholder: Casual
+  - type: textarea
+    id: version-text
+    attributes:
+      label: The version
+      description: What AIR wrote, or a description of it.
+    validations:
+      required: true
+  - type: textarea
+    id: typed
+    attributes:
+      label: What you typed
+      description: The sentence AIR rewrote, or a description of it, if you are fine sharing it.
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it is inappropriate
+    validations:
+      required: true

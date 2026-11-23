@@ -25,7 +25,7 @@ public sealed class SettingsTests : IDisposable
         Assert.Equal(AirKey.RightCtrlTap, s.AirKey);
         Assert.True(s.FollowCaret);
         Assert.False(s.DiagnosticLog);
-        Assert.Equal(EngineKind.Ollama, s.Engine); // local by default
+        Assert.Equal(EngineKind.BuiltIn, s.Engine); // the model inside AIR, on this PC
         Assert.Equal("qwen2.5:7b", s.OllamaModel);
         Assert.Equal("http://localhost:11434", s.OllamaEndpoint);
         Assert.Equal("claude-haiku-5-5", s.ClaudeModel);
@@ -36,6 +36,7 @@ public sealed class SettingsTests : IDisposable
     [Theory]
     [InlineData(EngineKind.Ollama, "qwen2.5:7b")]
     [InlineData(EngineKind.Claude, "claude-haiku-5-5")]
+    [InlineData(EngineKind.BuiltIn, "qwen2.5-7b-instruct-q4_k_m")]
     public void The_active_model_is_the_one_of_the_engine_in_use(EngineKind engine, string model)
         => Assert.Equal(model, new Settings { Engine = engine }.ActiveModel());
 
@@ -89,7 +90,7 @@ public sealed class SettingsTests : IDisposable
     {
         Directory.CreateDirectory(_dir);
         File.WriteAllText(Path.Combine(_dir, SettingsStore.FileName), """{ "Engine": "Gemini" }""");
-        Assert.Equal(EngineKind.Ollama, SettingsStore.Load(_dir).Engine);
+        Assert.Equal(EngineKind.BuiltIn, SettingsStore.Load(_dir).Engine);
         Assert.True(File.Exists(Path.Combine(_dir, SettingsStore.UnreadableFileName)));
     }
 
@@ -164,8 +165,16 @@ public sealed class SettingsTests : IDisposable
         Assert.Equal(BubbleLayout.Card, s.Layout);
         Assert.Equal(AppTheme.Windows, s.Theme);
         Assert.Equal(AirKey.RightCtrlTap, s.AirKey);
-        Assert.Equal(EngineKind.Ollama, s.Engine);
+        Assert.Equal(EngineKind.BuiltIn, s.Engine);
     }
+
+    [Theory]
+    [InlineData("""{ "On": false }""", EngineKind.Ollama)]           // written before there was a choice: Ollama's user
+    [InlineData("""{ "Engine": "Ollama" }""", EngineKind.Ollama)]
+    [InlineData("""{ "Engine": "Claude" }""", EngineKind.Claude)]
+    [InlineData("""{ "Engine": "BuiltIn" }""", EngineKind.BuiltIn)]
+    public void A_settings_file_keeps_its_engine_and_one_without_an_engine_keeps_Ollama(string json, EngineKind expected)
+        => Assert.Equal(expected, SettingsStore.Parse(json).Engine);
 
     [Fact]
     public void Every_tone_has_a_description()

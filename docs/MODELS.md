@@ -3,7 +3,8 @@
 Eight Ollama models measured on the reference machine ([ENGINES.md](ENGINES.md#reference-machine): an RTX 5070 with
 12 GB, a 24-core CPU and 64 GB of RAM) on 2026-11-23, with the app's own prompts: quality judged blind, speed on the
 GPU and on the CPU alone, size, video memory and license. The last part sets three ways of running the model side by
-side: Ollama (what AIR uses), llama.cpp loaded inside a .NET process (a probe, not part of AIR), and Claude.
+side: Ollama, llama.cpp loaded inside a .NET process (a probe, which became AIR's built-in engine:
+[ENGINES.md](ENGINES.md#built-in)), and Claude.
 
 ## Results in brief
 
@@ -146,6 +147,21 @@ to 225 to 268 tokens with Qwen's tokenizer, and Claude's tokenizer may count mor
 answer was 13 tokens on average (26 at most). AIR asks for low effort, which may add a few thinking tokens; take 0 to
 100 more. At Claude Haiku 5.5's $0.10 per million input tokens and $0.50 per million output tokens, a pause with
 three tones costs about $0.0001 to $0.0003. At 200 pauses a day for 30 days, that is $0.60 to $1.60.
+
+## The downloaded file and Ollama's
+
+The built-in engine downloads the Qwen team's own Q4_K_M file of Qwen2.5 7B Instruct (two parts, 4,683,073,632
+bytes). Ollama's `qwen2.5:7b` is the same model quantized separately (one file, 4,683,073,952 bytes); everything above
+was measured on Ollama's. Both were run through the probe on the reference GPU with the 16 sentences and 7 tones, 112
+prompts each:
+
+- 36 answers were identical and 76 differed.
+- The 152 differing versions, shuffled and blind, were judged with the same rubric by the same judge (Claude, one
+  pass): 5.09 of 6 for the Qwen team's file and 5.13 for Ollama's. Version by version, each file scored higher on 13
+  and they tied on 50. Over all 112 prompts the difference is 0.03, well under the noise of this test.
+- Meaning was lost in 5 of the Qwen team's versions and 3 of Ollama's. Two of the five turned "send me the file" into
+  "I'll send you the file" (Ornate and Trendy), and one gave back the Portuguese sentence untranslated (Concise).
+- Speed was the same: a median of 0.38 s and 0.39 s a version.
 
 ## What this does not show
 

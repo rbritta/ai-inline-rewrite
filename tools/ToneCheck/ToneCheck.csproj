@@ -7,7 +7,7 @@
     -->
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net11.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <IsPackable>false</IsPackable>
@@ -17,6 +17,7 @@
         <Compile Include="..\..\src\AiInlineRewrite\Core\EngineChoices.cs" Link="Linked\EngineChoices.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Core\EngineStatus.cs" Link="Linked\EngineStatus.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Core\Lang.cs" Link="Linked\Lang.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\LocalModel.cs" Link="Linked\LocalModel.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Core\Prompts.cs" Link="Linked\Prompts.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Core\Settings.cs" Link="Linked\Settings.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Core\AirKey.cs" Link="Linked\AirKey.cs" />

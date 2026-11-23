@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net11.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <IsPackable>false</IsPackable>
@@ -21,8 +21,9 @@
 
     <!--
       The app is a WPF + WinForms exe for Windows only, so the tests do NOT reference it. They LINK the source files
-      that need no desktop: the pure logic (src/AiInlineRewrite/Core) and the two engine clients (src/AiInlineRewrite/Llm,
-      plain HttpClient and the Anthropic SDK, driven here through fake HTTP handlers). This plain net9.0 assembly runs
+      that need no desktop: the pure logic (src/AiInlineRewrite/Core) and the engine clients and the model download
+      (src/AiInlineRewrite/Llm, plain HttpClient and the Anthropic SDK, driven here through fake HTTP handlers). The
+      built-in engine (src/AiInlineRewrite/Local) runs llama.cpp and stays out. This plain net11.0 assembly runs
       with a plain `dotnet test` and no desktop runtime. A new Core or Llm file is added here.
     -->
     <ItemGroup>
@@ -31,9 +32,11 @@
         <Compile Include="..\..\src\AiInlineRewrite\Core\EngineChoices.cs" Link="Linked\EngineChoices.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Core\EngineStatus.cs" Link="Linked\EngineStatus.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Core\Lang.cs" Link="Linked\Lang.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\LocalModel.cs" Link="Linked\LocalModel.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Core\Log.cs" Link="Linked\Log.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Core\PickMode.cs" Link="Linked\PickMode.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Core\Prompts.cs" Link="Linked\Prompts.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Core\ReportLink.cs" Link="Linked\ReportLink.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Core\Sentence.cs" Link="Linked\Sentence.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Core\Settings.cs" Link="Linked\Settings.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Core\SettingsStore.cs" Link="Linked\SettingsStore.cs" />
@@ -42,6 +45,7 @@
         <Compile Include="..\..\src\AiInlineRewrite\Core\WordDiff.cs" Link="Linked\WordDiff.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Llm\ClaudeClient.cs" Link="Linked\ClaudeClient.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Llm\IRewriteEngine.cs" Link="Linked\IRewriteEngine.cs" />
+        <Compile Include="..\..\src\AiInlineRewrite\Llm\ModelDownloader.cs" Link="Linked\ModelDownloader.cs" />
         <Compile Include="..\..\src\AiInlineRewrite\Llm\OllamaClient.cs" Link="Linked\OllamaClient.cs" />
     </ItemGroup>
 

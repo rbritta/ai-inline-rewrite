@@ -4,6 +4,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using AiInlineRewrite.Core;
+using AiInlineRewrite.Llm;
 
 namespace AiInlineRewrite.Ui;
 
@@ -32,7 +33,11 @@ public static class PreviewRenderer
             Save(Bubble(p, Writing()), Path.Combine(folder, $"bubble-card-writing-{theme}.png"));
             Save(Bubble(p, Blocked(EngineKind.Ollama, EngineState.ModelMissing, Settings.DefaultOllamaModel)), Path.Combine(folder, $"bubble-card-model-missing-{theme}.png"));
             Save(Bubble(p, Blocked(EngineKind.Claude, EngineState.NoKey, Settings.DefaultClaudeModel)), Path.Combine(folder, $"bubble-card-no-key-{theme}.png"));
-            Save(SettingsContent(dark), Path.Combine(folder, $"settings-{theme}.png"));
+            Save(Bubble(p, Blocked(EngineKind.BuiltIn, EngineState.ModelMissing, LocalModel.Id)), Path.Combine(folder, $"bubble-card-builtin-missing-{theme}.png"));
+            Save(SettingsContent(new RenderHost(dark)), Path.Combine(folder, $"settings-{theme}.png"));
+            // the built-in model downloading, 40 % through
+            var downloading = new DownloadProgress(LocalModel.DownloadSize * 2 / 5, LocalModel.DownloadSize);
+            Save(SettingsContent(new RenderHost(dark, EngineState.Downloading, downloading)), Path.Combine(folder, $"settings-downloading-{theme}.png"));
         }
     }
 
@@ -91,9 +96,9 @@ public static class PreviewRenderer
         Child = BubbleView.Create(s, p).Root,
     };
 
-    private static FrameworkElement SettingsContent(bool dark)
+    private static FrameworkElement SettingsContent(RenderHost host)
     {
-        var host = new RenderHost(dark);
+        bool dark = host.WindowsIsDark;
         var window = new SettingsWindow(host);
         var content = (FrameworkElement)window.Content;
         window.Content = null;
@@ -116,7 +121,8 @@ public static class PreviewRenderer
         png.Save(file);
     }
 
-    private sealed class RenderHost(bool dark) : ISettingsHost
+    private sealed class RenderHost(bool dark, EngineState state = EngineState.Ready, DownloadProgress? download = null)
+        : ISettingsHost
     {
         public Settings Settings { get; } = new() { Tones = Settings.DefaultTones() };
         public Palette Palette => Palette.For(dark);
@@ -128,9 +134,13 @@ public static class PreviewRenderer
         public void SetTheme(AppTheme theme) { }
         public void SetAirKey(AirKey key) { }
         public void SetFollow(bool on) { }
-        public EngineState EngineState => EngineState.Ready;
+        public EngineState EngineState => state;
         public void SetEngine(EngineKind engine) { }
         public void SetModel(string model) { }
         public Task<IReadOnlyList<string>?> InstalledModelsAsync() => Task.FromResult<IReadOnlyList<string>?>(null);
+        public DownloadProgress? ModelDownload => download;
+        public string? ModelDownloadError => null;
+        public void StartModelDownload() { }
+        public void CancelModelDownload() { }
     }
 }

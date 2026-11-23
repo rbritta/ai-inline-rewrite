@@ -164,7 +164,7 @@ public class ClaudeClientTests
         Assert.Equal(EngineKind.Claude, claude.Kind);
         Assert.Equal("claude-sonnet-5-5", claude.Model);
 
-        var ollama = RewriteEngines.Create(new Settings());
+        var ollama = RewriteEngines.Create(new Settings { Engine = EngineKind.Ollama });
         Assert.IsType<OllamaClient>(ollama);
         Assert.Equal("qwen2.5:7b", ollama.Model);
     }

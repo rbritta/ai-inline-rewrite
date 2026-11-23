@@ -22,9 +22,15 @@ Outputs (overwritten in place):
     docs/logo.png                               PQ2, 512 px, for light backgrounds
     docs/logo-dark.png                          PQ2, 512 px, for dark backgrounds
     docs/social-preview.png                     1280x640, the GitHub preview image
+
+    python tools/make_logo.py --msix
+
+writes only the Microsoft Store package's images (the Q), into packaging/Assets: Square44x44Logo (with the
+16 to 256 px target sizes, plated and unplated), Square150x150Logo, Wide310x150Logo and StoreLogo.
 """
 import math
 import os
+import sys
 
 from PIL import Image, ImageDraw, ImageFont
 
@@ -240,7 +246,32 @@ def render_social(pq2_dark):
     return img
 
 
+def centered(master, w, h, mark):
+    """The Q, mark px tall, centered on a transparent w x h tile."""
+    tile = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    q = to_icon(master, mark, margin_frac=0)
+    tile.alpha_composite(q, ((w - mark) // 2, (h - mark) // 2))
+    return tile
+
+
+def write_msix_assets():
+    assets = os.path.join(ROOT, "packaging", "Assets")
+    os.makedirs(assets, exist_ok=True)
+    q = render_q()
+    to_icon(q, 44).save(os.path.join(assets, "Square44x44Logo.png"))
+    for s in (16, 24, 32, 48, 256):
+        to_icon(q, s).save(os.path.join(assets, f"Square44x44Logo.targetsize-{s}.png"))
+        to_icon(q, s).save(os.path.join(assets, f"Square44x44Logo.targetsize-{s}_altform-unplated.png"))
+    centered(q, 150, 150, 96).save(os.path.join(assets, "Square150x150Logo.png"))
+    centered(q, 310, 150, 96).save(os.path.join(assets, "Wide310x150Logo.png"))
+    to_icon(q, 50).save(os.path.join(assets, "StoreLogo.png"))
+    print("wrote packaging/Assets")
+
+
 def main():
+    if "--msix" in sys.argv:
+        write_msix_assets()
+        return
     os.makedirs(RES, exist_ok=True)
     os.makedirs(DOCS, exist_ok=True)
 

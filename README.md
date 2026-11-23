@@ -9,9 +9,10 @@ Type in your language, get it rewritten right where you type. A small Windows tr
 Portuguese or in English in any app, pause, and a bubble under the text cursor offers it in clean English, in a few
 tones. Pick one with a key and it replaces what you typed. AIR for short.
 
-It runs locally by default, with an open model in [Ollama](https://ollama.com) on your PC. A second engine, Claude
-through the Anthropic API, is built for when you would rather not run a model yourself (no video card, for one), but
-it is [not validated yet](TODO.md#not-validated-yet): it was tested only against a fake Anthropic API.
+It runs locally by default: an open model (Qwen2.5 7B) inside AIR itself, on your PC, downloaded once on the first
+start, or taken from [Ollama](https://ollama.com) when Ollama already has it. Ollama is a second engine, and Claude
+through the Anthropic API a third, for when you would rather not run a model yourself (no video card, for one); the
+Claude engine is [not validated yet](TODO.md#not-validated-yet): it was tested only against a fake Anthropic API.
 
 [![CI](https://github.com/rbritta/ai-inline-rewrite/actions/workflows/ci.yml/badge.svg)](https://github.com/rbritta/ai-inline-rewrite/actions/workflows/ci.yml)
 [![release](https://img.shields.io/github/v/release/rbritta/ai-inline-rewrite?sort=semver&color=0284c7)](https://github.com/rbritta/ai-inline-rewrite/releases/latest)
@@ -49,15 +50,15 @@ menu), and the AIR key brings it back.
 
 ## Engines
 
-AIR asks a language model for each version, through one of two engines:
+AIR asks a language model for each version, through one of three engines:
 
-| | Ollama (default) | Claude ([not validated yet](TODO.md#not-validated-yet)) |
-|---|---|---|
-| Where the model runs | on your PC: `qwen2.5:7b` (Qwen2.5 7B, Apache 2.0) | at Anthropic: Claude Haiku 5.5 by default |
-| You need | Ollama and the model (a 4.7 GB download) | internet and an Anthropic API key |
-| On the [reference machine](docs/ENGINES.md#reference-machine) | 4.6 GiB of video memory; a median of 0.13 s per version on its GPU, 4.0 s on its CPU alone | not measured: live calls are [not validated yet](TODO.md#not-validated-yet) |
-| Cost | free; the model holds memory while loaded | billed per token by Anthropic ([pricing](https://platform.claude.com/docs/en/about-claude/pricing)) |
-| Your sentence | stays on your PC | goes to Anthropic's API |
+| | Built-in (default) | Ollama | Claude ([not validated yet](TODO.md#not-validated-yet)) |
+|---|---|---|---|
+| Where the model runs | inside AIR, on your PC: Qwen2.5 7B Instruct (Apache 2.0), through llama.cpp | in Ollama, on your PC: `qwen2.5:7b`, the same model | at Anthropic: Claude Haiku 5.5 by default |
+| You need | nothing more: the model downloads once from the settings (4.7 GB), or comes from Ollama's copy | Ollama and the model (a 4.7 GB download) | internet and an Anthropic API key |
+| On the [reference machine](docs/ENGINES.md#reference-machine) | 4.6 GiB of video memory; a median of 0.44 s per version on its GPU (Vulkan) | 4.6 GiB of video memory; a median of 0.13 s per version on its GPU, 2.1 s on 8 CPU threads | not measured: live calls are [not validated yet](TODO.md#not-validated-yet) |
+| Cost | free; the model holds memory while loaded | free; the same | billed per token by Anthropic ([pricing](https://platform.claude.com/docs/en/about-claude/pricing)) |
+| Your sentence | stays on your PC | stays on your PC | goes to Anthropic's API |
 
 [docs/ENGINES.md](docs/ENGINES.md) has the reference machine and what was measured on it (memory, speed, three other
 Ollama models), how long Ollama keeps the model loaded and how to free it, the Claude models and setup, other
@@ -66,33 +67,36 @@ backends, Docker, and the platforms. The Claude engine was tested only against a
 
 ## Install
 
-1. **An engine**, one of:
-   - **Ollama.** Install it from [ollama.com](https://ollama.com), then pull the model once, in a terminal:
+1. **AIR.** Download `AiInlineRewrite-vX.Y.Z-win-x64.zip` from
+   [Releases](https://github.com/rbritta/ai-inline-rewrite/releases/latest), unzip it anywhere and run
+   `AiInlineRewrite\AiInlineRewrite.exe`. The folder is self-contained: no installer, no .NET to install. The exe is
+   not code-signed yet ([code signing policy](CODE_SIGNING.md)), so SmartScreen may ask you to confirm the first run;
+   the Release carries a checksum and a build attestation to [verify the download](SECURITY.md#verifying-a-download).
 
-     ```powershell
-     ollama pull qwen2.5:7b
-     ```
-
-   - **Claude.** Create an API key in the [Claude Console](https://platform.claude.com/settings/keys) and store it as
-     the user environment variable `ANTHROPIC_API_KEY`; then, after step 2, pick Claude in the settings window
+2. **The model.** On the first start the settings open at the Engine section: click *Download* and AIR fetches its
+   model once (4.7 GB, from the Qwen team's repository on Hugging Face), with a progress bar; when the connection
+   drops it tries again by itself, and after a cancel it resumes where it stopped. If Ollama already has `qwen2.5:7b` on the PC, AIR uses that file and downloads nothing.
+   Or pick another engine there instead:
+   - **Ollama.** Install it from [ollama.com](https://ollama.com), pull the model once (`ollama pull qwen2.5:7b`)
+     and pick Ollama in the settings.
+   - **Claude.** Create an API key in the [Claude Console](https://platform.claude.com/settings/keys), store it as
+     the user environment variable `ANTHROPIC_API_KEY`, start AIR again and pick Claude
      ([docs/ENGINES.md](docs/ENGINES.md#set-it-up) walks through it, `ant auth login` included).
      [Not validated yet](TODO.md#not-validated-yet) against the live API.
-
-2. **AIR.** Download `AiInlineRewrite-vX.Y.Z-win-x64.zip` from
-   [Releases](https://github.com/rbritta/ai-inline-rewrite/releases/latest), unzip it anywhere and run
-   `AiInlineRewrite.exe`. It is one self-contained file: no installer, no .NET to install. The exe is not code-signed
-   yet ([code signing policy](CODE_SIGNING.md)), so SmartScreen may ask you to confirm the first run; the Release
-   carries a checksum and a build attestation to [verify the download](SECURITY.md#verifying-a-download).
 
 3. **Start with Windows** (optional): right-click the tray icon and check *Start with Windows*.
 
 **Uninstall.** Uncheck *Start with Windows* in the tray menu (that deletes its value under
-`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`), quit AIR from the tray, and delete `AiInlineRewrite.exe` and
-the folder `%AppData%\AiInlineRewrite` (the settings, and the log when it was on). AIR writes nothing else.
+`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`), quit AIR from the tray, and delete the `AiInlineRewrite`
+folder, the folder `%AppData%\AiInlineRewrite` (the settings, and the log when it was on) and the folder
+`%LocalAppData%\AiInlineRewrite` (the downloaded model). AIR writes nothing else.
 
 Windows 11, 64-bit. Windows 10 64-bit was [not tested yet](TODO.md#not-validated-yet). Windows only: AIR is made of
 Windows desktop APIs ([why](docs/ENGINES.md#platforms)). Running it a second time just opens the settings of the copy
 already running.
+
+**A version that was offensive or harmful?** Right-click the tray icon and pick *Report a version*. It opens this
+repository's issue form with AIR's version and engine filled in; what you typed is yours to paste or not.
 
 ## Use it
 
@@ -168,7 +172,7 @@ Click the gear in the bubble, and the settings open beside it; or click the tray
 
 <div align="center">
 
-<img src="docs/settings.png" width="380" alt="The settings window: AIR on, the five tones with checkboxes, key numbers and reorder arrows, Layout Card or Compact, Theme Windows, Light or Dark, the AIR key dropdown, Follow the text cursor with its arrow, and the Engine section: Ollama or Claude, the model qwen2.5:7b, and a green dot with Ready." />
+<img src="docs/settings.png" width="380" alt="The settings window: AIR on, the seven tones with checkboxes, key numbers and reorder arrows, Layout Card or Compact, Theme Windows, Light or Dark, the AIR key dropdown, Follow the text cursor with its arrow, and the Engine section: Built-in, Ollama or Claude, the model Qwen2.5 7B Instruct, and a green dot with Ready." />
 
 </div>
 
@@ -192,12 +196,13 @@ Click the gear in the bubble, and the settings open beside it; or click the tray
 
 </div>
 
-The settings live in `%AppData%\AiInlineRewrite\settings.json`. `Engine`, `OllamaModel` and `ClaudeModel` are also
+The settings live in `%AppData%\AiInlineRewrite\settings.json`, and the built-in engine's model in
+`%LocalAppData%\AiInlineRewrite\models`. `Engine`, `OllamaModel` and `ClaudeModel` are also
 in the window's Engine section; the rest have no switch there:
 
 | Field | Default | What |
 |---|---|---|
-| `Engine` | `Ollama` | `Ollama` or `Claude` ([Engines](#engines)) |
+| `Engine` | `BuiltIn` | `BuiltIn`, `Ollama` or `Claude` ([Engines](#engines)); a settings file from before 0.3 keeps `Ollama` |
 | `OllamaModel` | `qwen2.5:7b` | any Ollama model you pulled |
 | `OllamaEndpoint` | `http://localhost:11434` | where Ollama listens |
 | `ClaudeModel` | `claude-haiku-5-5` | the Claude model, such as `claude-sonnet-5-5` or `claude-opus-5-5` |
@@ -212,6 +217,8 @@ The numbers below come from the [reference machine](docs/ENGINES.md#reference-ma
 GPU, a 24-core desktop CPU, 64 GB of RAM). Other GPUs, CPU-only laptops and Windows 10 were
 [not tested yet](TODO.md#not-validated-yet).
 
+- **Built-in on the GPU** (Vulkan): a median of 0.45 s per version; loading the model into the GPU takes about 3 s,
+  once.
 - **Ollama on the GPU**: the ten sample sentences through all five tones, 50 versions one at a time, took 6.3 s, a
   median of 0.13 s each.
 - **Ollama on the CPU alone**: a median of 4.0 s per version.
@@ -228,18 +235,19 @@ connection), the bubble and the settings window say so and show the one step tha
 
 <div align="center">
 
-<img src="docs/bubble-model-missing.png" width="440" alt="The bubble when the Ollama model is missing: 'The model qwen2.5:7b is missing' and the hint 'Run this once in a terminal: ollama pull qwen2.5:7b'." />
+<img src="docs/bubble-model-missing.png" width="440" alt="The bubble before the built-in engine's model is on the PC: 'The model is not on this PC yet' and the hint 'Download it once in the settings (4.7 GB).'" />
 
 </div>
 
 ## Privacy
 
-- **Local by default.** With Ollama, the only network traffic is to your own Ollama (`localhost` by default): no
-  account, no cloud.
+- **Local by default.** The built-in engine runs the model inside AIR: what you type never leaves the PC. Its one
+  download is the model, from Hugging Face, when you click Download. With Ollama, the only network traffic is to your
+  own Ollama (`localhost` by default). No account, no cloud.
 - **With Claude**, the sentence you are typing and the tone's instructions go to Anthropic's API at each pause, once
   per enabled tone, and Anthropic's terms apply to them. Nothing else from your PC is sent, and without a credential
   nothing is sent at all.
-- **No telemetry**, with either engine.
+- **No telemetry**, with any engine.
 - **Password fields are never read.** The bubble says so and stays empty.
 - **No history.** AIR keeps the current sentence in memory while the bubble is open, nothing more. The diagnostic
   log is off by default and, when on, holds events and timings, never text.
@@ -247,8 +255,8 @@ connection), the bubble and the settings window say so and show the one step tha
 
 ## Develop
 
-Windows with the [.NET 9 SDK](https://dotnet.microsoft.com/download). Built and tested on the
-[reference machine](docs/ENGINES.md#reference-machine), Windows 11 x64 with the .NET SDK 9.0.315. An engine (Ollama,
+Windows with the [.NET 11 SDK](https://dotnet.microsoft.com/download). Built and tested on the
+[reference machine](docs/ENGINES.md#reference-machine), Windows 11 x64 with the .NET SDK 11.0.100. An engine (Ollama,
 or an Anthropic credential) is only needed to run the app or `tools/ToneCheck`, not to build or test: the tests drive
 both engine clients through a fake HTTP handler.
 
@@ -257,7 +265,8 @@ git clone https://github.com/rbritta/ai-inline-rewrite
 cd ai-inline-rewrite
 dotnet build AiInlineRewrite.sln
 dotnet test tests\AiInlineRewrite.Tests                              # the unit tests
-dotnet publish src\AiInlineRewrite -p:PublishProfile=win-x64          # -> artifacts\publish\win-x64\AiInlineRewrite.exe
+dotnet publish src\AiInlineRewrite -p:PublishProfile=win-x64          # -> artifacts\publish\win-x64\ (a folder)
+.\tools\pack-msix.ps1                                               # the Microsoft Store package (MSIX)
 dotnet run --project tools\ToneCheck -c Release                      # every tone over the sample sentences (Ollama)
 dotnet run --project tools\ToneCheck -c Release -- --engine claude    # the same through Claude (bills the account)
 ```
@@ -268,15 +277,19 @@ request; a `vX.Y.Z` tag publishes a GitHub Release. See [CONTRIBUTING.md](CONTRI
 
 ```text
 AiInlineRewrite.sln
-src/AiInlineRewrite/              the app: WPF bubble and settings, WinForms tray, net9.0-windows
+src/AiInlineRewrite/              the app: WPF bubble and settings, WinForms tray, net11.0-windows10.0.19041.0
   AppController.cs                  the flow: typing, pause, rewrite, pick, apply
   Core/                             pure logic, unit-tested: prompts, text shaping, pick mode, AIR key, settings
-  Llm/                              the engines behind IRewriteEngine: OllamaClient, ClaudeClient (Anthropic SDK)
+  Llm/                              the engines behind IRewriteEngine: OllamaClient, ClaudeClient (Anthropic SDK),
+                                    the model download
+  Local/                            the built-in engine (LLamaSharp, llama.cpp) and its --check-builtin
   Native/                           keyboard and mouse hooks, SendInput, clipboard snapshot
   Automation/FocusedText.cs         the focused field through UI Automation
   Ui/                               bubble, settings window, preview, palette, icons
-tests/AiInlineRewrite.Tests/      xUnit on plain net9.0, links the pure files and the engine clients
-tools/                            ToneCheck, the desktop smoke test, make_logo.py, release notes and coverage for CI
+tests/AiInlineRewrite.Tests/      xUnit on plain net11.0, links the pure files and the engine clients
+packaging/                        the MSIX manifest and its icons
+tools/                            ToneCheck, the desktop smoke test, make_logo.py, pack-msix.ps1, release notes and
+                                  coverage for CI
 design/experience.html            the HTML mockup the app follows
 ```
 

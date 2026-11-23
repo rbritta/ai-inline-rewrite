@@ -23,6 +23,12 @@ public enum EngineKind
     /// <summary>A local model in Ollama, on this PC or one you choose (<see cref="Settings.OllamaEndpoint"/>).</summary>
     Ollama,
 
+    /// <summary>
+    /// <see cref="LocalModel"/>, run inside AIR itself (llama.cpp), downloaded once or taken from Ollama's copy. The
+    /// default since 0.3.0; a settings file that names another engine keeps it.
+    /// </summary>
+    BuiltIn,
+
     /// <summary>Claude, through the Anthropic API; the API key comes from the environment, never from settings.json.</summary>
     Claude,
 }
@@ -68,8 +74,8 @@ public sealed class Settings
 
     public double? BubbleTop { get; set; }
 
-    /// <summary>Which model writes the versions: a local one in Ollama (the default) or Claude.</summary>
-    public EngineKind Engine { get; set; } = EngineKind.Ollama;
+    /// <summary>Which model writes the versions: the built-in one (the default), one in Ollama, or Claude.</summary>
+    public EngineKind Engine { get; set; } = EngineKind.BuiltIn;
 
     /// <summary>Any model pulled in Ollama (<c>ollama pull</c>).</summary>
     public string OllamaModel { get; set; } = DefaultOllamaModel;
@@ -90,7 +96,12 @@ public sealed class Settings
     public bool Welcomed { get; set; }
 
     /// <summary>The model of the engine in use (a method, so it is not saved in the file).</summary>
-    public string ActiveModel() => Engine == EngineKind.Claude ? ClaudeModel : OllamaModel;
+    public string ActiveModel() => Engine switch
+    {
+        EngineKind.Claude => ClaudeModel,
+        EngineKind.BuiltIn => LocalModel.Id,
+        _ => OllamaModel,
+    };
 
     public static List<ToneSetting> DefaultTones() =>
         [.. Core.Tones.All.Select(t => new ToneSetting { Tone = t, On = Core.Tones.OnByDefault(t) })];
@@ -120,7 +131,7 @@ public sealed class Settings
         if (!Enum.IsDefined(Layout)) Layout = BubbleLayout.Card;
         if (!Enum.IsDefined(Theme)) Theme = AppTheme.Windows;
         if (!Enum.IsDefined(AirKey)) AirKey = AirKey.RightCtrlTap;
-        if (!Enum.IsDefined(Engine)) Engine = EngineKind.Ollama;
+        if (!Enum.IsDefined(Engine)) Engine = EngineKind.BuiltIn;
         OllamaModel = Trimmed(OllamaModel, DefaultOllamaModel);
         OllamaEndpoint = Trimmed(OllamaEndpoint, DefaultOllamaEndpoint);
         ClaudeModel = Trimmed(ClaudeModel, DefaultClaudeModel);

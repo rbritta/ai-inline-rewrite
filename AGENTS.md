@@ -8,20 +8,22 @@ AI Inline Rewrite (AIR for short) is a Windows tray app. While you type in any a
 focused field at a pause (UI Automation), asks a model for one English version per tone (a local Ollama model by
 default, or Claude through the Anthropic SDK), and shows them in a bubble under the text cursor. A tap of the AIR key
 opens pick mode; the chosen version replaces the sentence in place (Backspaces and a paste through the clipboard).
-.NET 9, WPF for the bubble and the settings, WinForms for the tray icon, Windows only.
+.NET 11, WPF for the bubble and the settings, WinForms for the tray icon, Windows only.
 
 ## Layout
 
 | Path | What |
 |---|---|
 | `src/AiInlineRewrite/AppController.cs` | the flow: hooks, typing and the pause, rewrite, pick mode, apply, tray, settings |
-| `src/AiInlineRewrite/Core/` | pure logic, linked into the tests: `Prompts`, `TextShape`, `Sentence`, `WordDiff`, `Lang`, `PickMode`, `AirKeyDetector`, `AirKey`, `Settings`, `SettingsStore`, `EngineStatus`, `EngineChoices`, `Tone`, `Log` |
-| `src/AiInlineRewrite/Llm/` | the engines behind `IRewriteEngine`: `OllamaClient` (streaming `/api/generate`, `/api/tags` check and model list), `ClaudeClient` (Anthropic SDK, streaming Messages, Models API check); `RewriteEngines.Create` makes the one in the settings |
+| `src/AiInlineRewrite/Core/` | pure logic, linked into the tests: `Prompts`, `TextShape`, `Sentence`, `WordDiff`, `Lang`, `PickMode`, `AirKeyDetector`, `AirKey`, `Settings`, `SettingsStore`, `EngineStatus`, `EngineChoices`, `LocalModel`, `Tone`, `Log` |
+| `src/AiInlineRewrite/Llm/` | the engines behind `IRewriteEngine`: `OllamaClient` (streaming `/api/generate`, `/api/tags` check and model list), `ClaudeClient` (Anthropic SDK, streaming Messages, Models API check); `RewriteEngines.Create` makes the one in the settings; `ModelDownloader` (the built-in model from Hugging Face) |
+| `src/AiInlineRewrite/Local/` | the built-in engine: `BuiltInEngine` (LLamaSharp, llama.cpp on Vulkan or the CPU) and `BuiltInCheck` (`--check-builtin`) |
 | `src/AiInlineRewrite/Native/` | keyboard and mouse hooks, `SendInput` paste, clipboard snapshot, Start with Windows |
 | `src/AiInlineRewrite/Automation/FocusedText.cs` | the focused field's text, caret and password flag |
 | `src/AiInlineRewrite/Ui/` | the code-built bubble and settings window, preview, palette, vector icons, offscreen renderer |
-| `tests/AiInlineRewrite.Tests/` | xUnit on plain `net9.0`; it **links** the `Core` and `Llm` files, with no reference to the app; `FakeHttp` stands in for Ollama and the Anthropic API |
-| `tools/` | `ToneCheck` (every tone over sample sentences, either engine), `smoke/` (drives the real app on the desktop), `make_logo.py`, `release-notes.ps1`, `coverage-summary.ps1` |
+| `tests/AiInlineRewrite.Tests/` | xUnit on plain `net11.0`; it **links** the `Core` and `Llm` files, with no reference to the app; `FakeHttp` stands in for Ollama and the Anthropic API |
+| `tools/` | `ToneCheck` (every tone over sample sentences, either engine), `smoke/` (drives the real app on the desktop), `make_logo.py` (`--msix` for the package icons), `pack-msix.ps1`, `release-notes.ps1`, `coverage-summary.ps1` |
+| `packaging/` | the MSIX manifest (Store package) and its icons, packed by `tools/pack-msix.ps1` |
 | `design/experience.html` | the HTML mockup the app follows |
 | `docs/` | architecture, engines, AI collaboration, branding, prompts, and the screenshots |
 
@@ -32,8 +34,10 @@ dotnet build AiInlineRewrite.sln
 dotnet test tests\AiInlineRewrite.Tests                               # the unit tests
 dotnet run --project tools\ToneCheck -c Release                       # needs Ollama with the model
 dotnet run --project tools\ToneCheck -c Release -- --engine claude     # needs an Anthropic credential; bills the account
-src\AiInlineRewrite\bin\Debug\net9.0-windows\AiInlineRewrite.exe --render-previews out   # PNGs, nothing shown
-dotnet publish src\AiInlineRewrite -p:PublishProfile=win-x64           # the release exe
+src\AiInlineRewrite\bin\Debug\net11.0-windows10.0.19041.0\AiInlineRewrite.exe --render-previews out   # PNGs, nothing shown
+src\AiInlineRewrite\bin\Debug\net11.0-windows10.0.19041.0\AiInlineRewrite.exe --check-builtin out.md  # built-in engine, every tone
+dotnet publish src\AiInlineRewrite -p:PublishProfile=win-x64           # the release folder
+.\tools\pack-msix.ps1                                                  # the Store package (MSIX)
 .\tools\release-notes.ps1 -Tag v0.1.0                                 # the notes of a release
 ```
 
@@ -47,7 +51,8 @@ dotnet publish src\AiInlineRewrite -p:PublishProfile=win-x64           # the rel
   release with no other key and no mouse input counts as a tap (`AirKeyDetector`).
 - Nothing the user types is written to disk: the log holds events only and is off by default; password fields are
   never read.
-- The only network traffic is to the engine selected in the settings: the Ollama endpoint, or the Anthropic API.
+- The only network traffic is to the engine selected in the settings (the Ollama endpoint, or the Anthropic API),
+  plus the built-in model's download from Hugging Face when the user clicks Download.
   The other engine is never created. Tests never call a live engine.
 - The Anthropic credential is found by the SDK (environment variables or an `ant auth login` profile); it is never a
   setting, never typed in the settings window, never logged, and without it nothing is sent.

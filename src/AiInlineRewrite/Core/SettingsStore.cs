@@ -38,8 +38,20 @@ public static class SettingsStore
         }
     }
 
-    public static Settings Parse(string json) =>
-        (JsonSerializer.Deserialize<Settings>(json, Json) ?? new Settings()).Normalize();
+    /// <summary>
+    /// A file with no Engine field was written before there was a choice, when Ollama was the only engine: it keeps
+    /// Ollama. Only a new install (no file) starts on the built-in engine.
+    /// </summary>
+    public static Settings Parse(string json)
+    {
+        var settings = JsonSerializer.Deserialize<Settings>(json, Json) ?? new Settings();
+        using (var doc = JsonDocument.Parse(json))
+        {
+            if (doc.RootElement.ValueKind == JsonValueKind.Object && !doc.RootElement.TryGetProperty(nameof(Settings.Engine), out _))
+                settings.Engine = EngineKind.Ollama;
+        }
+        return settings.Normalize();
+    }
 
     public static string Serialize(Settings settings) => JsonSerializer.Serialize(settings, Json);
 

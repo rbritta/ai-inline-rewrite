@@ -19,6 +19,14 @@ state it as fact.
 - **Other configurations.** Every measurement comes from the reference machine (docs/ENGINES.md): Windows 11, a 12 GB
   desktop GPU, a 24-core desktop CPU, 64 GB of RAM. Not tested: other GPUs (and how much video memory the default
   model needs on them), CPU-only laptops, a full bubble of three tones on the CPU, and Windows 10.
+- **The built-in engine elsewhere.** It ran on the reference machine's GPU only, through Vulkan. Not yet: other GPUs
+  (NVIDIA laptops, AMD, Intel), the CPU fallback on a PC without a GPU, and a PC with less free memory than the model
+  needs.
+- **The model download in the app.** The downloader was tested against a fake Hugging Face (the unit tests: resume,
+  restart, retries after a drop, a stall or a busy server, damaged file, no connection), and the official files were
+  fetched and checked outside the app. A full download from the settings window was not run.
+- **The Store package installed.** The package was built and signed with a test certificate. Not yet: installing it
+  and checking the tray, the settings, the startup task, where its files land, and what uninstalling removes.
 - **Ollama in Docker.** The steps in docs/ENGINES.md follow the documentation of the `ollama/ollama` image and were not
   run; AIR was tested against a native Ollama only.
 

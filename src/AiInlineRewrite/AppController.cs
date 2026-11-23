@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Threading;
 using AiInlineRewrite.Automation;
@@ -56,6 +57,14 @@ public sealed class AppController : ISettingsHost, IDisposable
 
     private Mode _mode = Mode.Idle;
     private EngineState _engine = EngineState.Unknown;
+
+    // the built-in model's download: running while _download is set; the error of the last one that failed
+    private CancellationTokenSource? _download;
+    private DownloadProgress? _downloadProgress;
+    private string? _downloadError;
+
+    // the first start: no settings file yet, so the settings open by themselves when the built-in model is missing
+    private bool _firstRun;
     private bool _copiedOnly;
     private List<BubbleRow> _rows = [];
     private string _source = "";
@@ -79,7 +88,9 @@ public sealed class AppController : ISettingsHost, IDisposable
     {
         _acceptInjected = acceptInjected;
         _settings = SettingsStore.Load(_dir);
+        _firstRun = !_settings.Welcomed;
         Log.Configure(Path.Combine(_dir, "log.txt"), _settings.DiagnosticLog);
+        RewriteEngines.BuiltIn = () => new Local.BuiltInEngine(() => _download is not null);
         _rewriter = RewriteEngines.Create(_settings);
         _air = new AirKeyDetector(_settings.AirKey);
         _off = new AirKeyDetector(AirKeys.OffKey(_settings.AirKey));
@@ -152,23 +163,24 @@ public sealed class AppController : ISettingsHost, IDisposable
         menu.Items.Add(new WinForms.ToolStripMenuItem("Settings", null, (_, _) => OpenSettings()));
         _onItem = new WinForms.ToolStripMenuItem("AIR on", null, (_, _) => SetOn(!_settings.On)) { Checked = _settings.On };
         menu.Items.Add(_onItem);
-        bool startOn = false;
-        try { startOn = StartWithWindows.IsOn(); }
-        catch (Exception e) when (e is System.Security.SecurityException or UnauthorizedAccessException or IOException) { }
-        var startItem = new WinForms.ToolStripMenuItem("Start with Windows") { Checked = startOn };
-        startItem.Click += (_, _) =>
+        var startItem = new WinForms.ToolStripMenuItem("Start with Windows");
+        _ = ReadStartAsync(startItem);
+        startItem.Click += async (_, _) =>
         {
             try
             {
-                StartWithWindows.Set(!startItem.Checked);
-                startItem.Checked = StartWithWindows.IsOn();
+                startItem.Checked = await StartWithWindows.SetAsync(!startItem.Checked);
             }
-            catch (Exception e) when (e is System.Security.SecurityException or UnauthorizedAccessException or IOException)
+            catch (Exception e) when (e is System.Security.SecurityException or UnauthorizedAccessException or IOException or COMException)
             {
                 Log.Write("start with Windows failed: " + e.GetType().Name);
             }
         };
         menu.Items.Add(startItem);
+        menu.Items.Add(new WinForms.ToolStripMenuItem("Report a version", null, (_, _) => OpenReport())
+        {
+            ToolTipText = "Tell us about a version that was offensive, harmful or otherwise wrong (opens GitHub)",
+        });
         menu.Items.Add(new WinForms.ToolStripSeparator());
         menu.Items.Add(new WinForms.ToolStripMenuItem("Exit", null, (_, _) => Application.Current.Shutdown()));
 
@@ -184,8 +196,33 @@ public sealed class AppController : ISettingsHost, IDisposable
             _settings.Welcomed = true;
             SaveSoon();
             _tray.BalloonTipTitle = "AI Inline Rewrite is on";
-            _tray.BalloonTipText = $"Type in any app. At a pause, AIR writes the versions; {AirKeys.Label(_settings.AirKey).ToLowerInvariant()} to pick one. Click this icon for the settings.";
+            _tray.BalloonTipText = _rewriter is Local.BuiltInEngine { ModelPath: null }
+                ? $"First, AIR needs its model on this PC: download it once in the settings ({LocalModel.DownloadSizeText})."
+                : $"Type in any app. At a pause, AIR writes the versions; {AirKeys.Label(_settings.AirKey).ToLowerInvariant()} to pick one. Click this icon for the settings.";
             _tray.ShowBalloonTip(8000);
+        }
+    }
+
+    /// <summary>Opens the issue form for an inappropriate version in the default browser (Store policy 11.16).</summary>
+    private void OpenReport()
+    {
+        string url = ReportLink.For(Version, _settings.Engine, _settings.ActiveModel());
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            Log.Write("report link failed: " + e.GetType().Name);
+        }
+    }
+
+    private static async Task ReadStartAsync(WinForms.ToolStripMenuItem item)
+    {
+        try { item.Checked = await StartWithWindows.IsOnAsync(); }
+        catch (Exception e) when (e is System.Security.SecurityException or UnauthorizedAccessException or IOException or COMException)
+        {
+            Log.Write("start with Windows unreadable: " + e.GetType().Name);
         }
     }
 
@@ -529,6 +566,63 @@ public sealed class AppController : ISettingsHost, IDisposable
         else if (_mode == Mode.Idle) _mode = Mode.Error;
         Render();
         _settingsWindow?.SyncEngine();
+        if (_firstRun && engine.Kind == EngineKind.BuiltIn && state == EngineState.ModelMissing) OpenSettings();
+        _firstRun = false;
+    }
+
+    // ---------- the built-in model's download ----------
+
+    public DownloadProgress? ModelDownload => _download is null ? null : _downloadProgress;
+
+    public string? ModelDownloadError => _downloadError;
+
+    public void StartModelDownload()
+    {
+        if (_download is not null) return;
+        var cts = new CancellationTokenSource();
+        _download = cts;
+        _downloadError = null;
+        _downloadProgress = new DownloadProgress(0, LocalModel.DownloadSize);
+        Log.Write("model download: start");
+        _ = RunDownloadAsync(cts);
+        if (_settings.Engine == EngineKind.BuiltIn) _ = CheckEngineAsync();
+        _settingsWindow?.SyncEngine();
+    }
+
+    public void CancelModelDownload() => _download?.Cancel();
+
+    private async Task RunDownloadAsync(CancellationTokenSource cts)
+    {
+        // created here, on the UI thread, so each report comes back to it
+        var progress = new Progress<DownloadProgress>(p =>
+        {
+            if (_download != cts) return;
+            _downloadProgress = p;
+            _settingsWindow?.SyncEngine();
+        });
+        var watch = Stopwatch.StartNew();
+        try
+        {
+            await Task.Run(() => new ModelDownloader(LocalModel.DefaultDirectory).DownloadAsync(progress, cts.Token));
+            Log.Write($"model download: done in {watch.Elapsed.TotalMinutes:0.0} min");
+        }
+        catch (OperationCanceledException)
+        {
+            Log.Write("model download: cancelled");
+        }
+        catch (ModelDownloadException e)
+        {
+            _downloadError = e.Message;
+            Log.Write("model download failed: " + e.Message);
+        }
+        finally
+        {
+            _download = null;
+            _downloadProgress = null;
+            cts.Dispose();
+            if (_settings.Engine == EngineKind.BuiltIn) _ = CheckEngineAsync();
+            _settingsWindow?.SyncEngine();
+        }
     }
 
     // A new engine or model from the settings window, in effect at once: what the old one was writing is dropped, the
@@ -862,6 +956,7 @@ public sealed class AppController : ISettingsHost, IDisposable
     {
         if (_saveTimer.IsEnabled) SaveNow();
         _cts?.Cancel();
+        _download?.Cancel();
         _hook.Dispose();
         _mouse.Dispose();
         _windowsTheme.Dispose();

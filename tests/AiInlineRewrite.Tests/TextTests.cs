@@ -137,8 +137,26 @@ public class EngineStatusTests
     }
 
     [Theory]
+    [InlineData(EngineState.ModelMissing, "The model is not on this PC yet", "Download it once in the settings (4.7 GB)")]
+    [InlineData(EngineState.Downloading, "Downloading the model", "ready by itself")]
+    [InlineData(EngineState.Failing, "The model could not run", "memory")]
+    [InlineData(EngineState.NotRunning, "The model could not run", "memory")]
+    public void Every_built_in_problem_says_what_to_do_and_never_mentions_Ollama(EngineState state, string status, string hint)
+    {
+        string model = LocalModel.Id;
+        Assert.Equal(status, EngineStatus.Status(EngineKind.BuiltIn, state, model));
+        Assert.Contains(hint, EngineStatus.Hint(EngineKind.BuiltIn, state, model));
+        Assert.DoesNotContain("Ollama", EngineStatus.Status(EngineKind.BuiltIn, state, model) + EngineStatus.Hint(EngineKind.BuiltIn, state, model));
+    }
+
+    [Fact]
+    public void A_download_blocks_writing_until_it_ends()
+        => Assert.True(EngineStatus.Blocks(EngineState.Downloading));
+
+    [Theory]
     [InlineData(EngineKind.Ollama)]
     [InlineData(EngineKind.Claude)]
+    [InlineData(EngineKind.BuiltIn)]
     public void Ready_says_ready_with_no_hint(EngineKind engine)
     {
         Assert.Equal("Ready", EngineStatus.Status(engine, EngineState.Ready, "m"));
@@ -189,6 +207,18 @@ public class PromptsTests
         Assert.Contains("switched to another language", Prompts.For(tone, "acho que sim", retry: true));
     }
 
+    [Theory]
+    [MemberData(nameof(AllTones))]
+    public void The_built_in_prompt_is_Ollama_s_qwen2_5_wrapping_of_the_same_prompt(Tone tone)
+    {
+        string chat = Prompts.Chat(tone, "acho que sim", retry: true);
+        Assert.Equal(
+            "<|im_start|>system\nYou are Qwen, created by Alibaba Cloud. You are a helpful assistant.<|im_end|>\n"
+            + "<|im_start|>user\n" + Prompts.For(tone, "acho que sim", retry: true) + "<|im_end|>\n<|im_start|>assistant\n",
+            chat);
+        Assert.Contains("<|im_end|>", Prompts.ChatStops);
+    }
+
     [Fact]
     public void Casual_no_longer_capitalizes_the_first_letter()
     {
@@ -235,6 +265,9 @@ public class PromptsTests
     }
 }
 
+// The log is one static file for the whole process, and other code under test writes to it (the model download), so
+// this class runs alone.
+[Collection(nameof(EnvironmentCollection))]
 public sealed class LogTests : IDisposable
 {
     private readonly string _dir = Path.Combine(Path.GetTempPath(), "air-log-" + Guid.NewGuid().ToString("N"));

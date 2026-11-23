@@ -6,9 +6,9 @@ namespace AiInlineRewrite.Tests;
 public class EngineChoicesTests
 {
     [Fact]
-    public void The_engines_are_Ollama_then_Claude_by_their_setting_names()
+    public void The_engines_are_built_in_Ollama_then_Claude_by_their_setting_names()
     {
-        Assert.Equal([("Ollama", "Ollama"), ("Claude", "Claude")], EngineChoices.Engines);
+        Assert.Equal([("BuiltIn", "Built-in"), ("Ollama", "Ollama"), ("Claude", "Claude")], EngineChoices.Engines);
         Assert.All(EngineChoices.Engines, e => Assert.True(Enum.TryParse<EngineKind>(e.Value, out _)));
     }
 

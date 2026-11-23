@@ -1,6 +1,6 @@
 name: CI
 
-# Windows only: the app is WPF + WinForms (net9.0-windows). The tests are a plain net9.0 project that links the pure
+# Windows only: the app is WPF + WinForms (net11.0-windows10.0.19041.0). The tests are a plain net11.0 project that links the pure
 # source files and the engine clients, so they need no desktop runtime, no Ollama and no Anthropic key.
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '11.0.x'
           # no NuGet cache: setup-dotnet caches from packages.lock.json files, which this repo does not keep
 
       - name: Build

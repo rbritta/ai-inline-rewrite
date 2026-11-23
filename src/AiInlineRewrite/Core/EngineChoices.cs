@@ -7,7 +7,10 @@ public static class EngineChoices
 {
     /// <summary>The engines, as the settings window names them.</summary>
     public static readonly IReadOnlyList<(string Value, string Label)> Engines =
-        [(nameof(EngineKind.Ollama), "Ollama"), (nameof(EngineKind.Claude), "Claude")];
+        [(nameof(EngineKind.BuiltIn), "Built-in"), (nameof(EngineKind.Ollama), "Ollama"), (nameof(EngineKind.Claude), "Claude")];
+
+    /// <summary>The built-in engine runs one model.</summary>
+    public static readonly IReadOnlyList<(string Value, string Label)> BuiltInModels = [(LocalModel.Id, LocalModel.Name)];
 
     /// <summary>The Claude models the window offers, fastest first.</summary>
     public static readonly IReadOnlyList<(string Value, string Label)> ClaudeModels =

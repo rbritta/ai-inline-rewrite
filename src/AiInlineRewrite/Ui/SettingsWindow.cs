@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Controls;
@@ -8,6 +9,7 @@ using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 using System.Windows.Threading;
 using AiInlineRewrite.Core;
+using AiInlineRewrite.Llm;
 
 namespace AiInlineRewrite.Ui;
 
@@ -47,6 +49,17 @@ public interface ISettingsHost
 
     /// <summary>The models Ollama has, while Ollama is the engine; null otherwise, or when Ollama cannot be asked.</summary>
     Task<IReadOnlyList<string>?> InstalledModelsAsync();
+
+    /// <summary>How far the built-in model's download is; null when none is running.</summary>
+    DownloadProgress? ModelDownload { get; }
+
+    /// <summary>Why the last download stopped, when it failed; null otherwise.</summary>
+    string? ModelDownloadError { get; }
+
+    void StartModelDownload();
+
+    /// <summary>Stops the download; what came in is kept, and the next start resumes from there.</summary>
+    void CancelModelDownload();
 }
 
 /// <summary>
@@ -366,7 +379,7 @@ public sealed class SettingsWindow : Window
         var s = _host.Settings;
         var stack = new StackPanel();
         stack.Children.Add(H3(p, "Engine"));
-        stack.Children.Add(Help(p, "The model that writes the versions. Ollama runs it on this PC; Claude sends the sentence you are typing to Anthropic's API."));
+        stack.Children.Add(Help(p, "The model that writes the versions. Built-in runs it inside AIR and Ollama runs it in Ollama, both on this PC; Claude sends the sentence you are typing to Anthropic's API."));
 
         var engines = new Segmented(p, EngineChoices.Engines, s.Engine.ToString(), "Engine") { Margin = new Thickness(0, 8, 0, 0) };
         engines.Picked += (value, _) =>
@@ -380,9 +393,12 @@ public sealed class SettingsWindow : Window
         };
         stack.Children.Add(engines);
 
-        var options = s.Engine == EngineKind.Claude
-            ? EngineChoices.ClaudeOptions(s.ClaudeModel)
-            : EngineChoices.OllamaOptions(_installed, s.OllamaModel);
+        var options = s.Engine switch
+        {
+            EngineKind.Claude => EngineChoices.ClaudeOptions(s.ClaudeModel),
+            EngineKind.BuiltIn => EngineChoices.BuiltInModels,
+            _ => EngineChoices.OllamaOptions(_installed, s.OllamaModel),
+        };
         var model = new Dropdown(p, options, s.ActiveModel(), "Model") { Margin = new Thickness(0, 8, 0, 0) };
         model.Chosen += value =>
         {
@@ -435,7 +451,14 @@ public sealed class SettingsWindow : Window
         {
             Width = 8,
             Height = 8,
-            Fill = state == EngineState.Ready ? p.InsFg : EngineStatus.Blocks(state) ? p.DelFg : p.Muted,
+            // a download under way is progress, not a fault
+            Fill = state switch
+            {
+                EngineState.Ready => p.InsFg,
+                EngineState.Downloading => p.Accent,
+                _ when EngineStatus.Blocks(state) => p.DelFg,
+                _ => p.Muted,
+            },
             Margin = new Thickness(1, 0, 9, 0),
             VerticalAlignment = VerticalAlignment.Center,
         };
@@ -445,13 +468,74 @@ public sealed class SettingsWindow : Window
 
         var stack = new StackPanel();
         stack.Children.Add(line);
-        if (hint.Length > 0)
+        if (s.Engine == EngineKind.BuiltIn && (_host.ModelDownload is not null || state == EngineState.ModelMissing))
+        {
+            stack.Children.Add(DownloadBlock(p));
+        }
+        else if (hint.Length > 0)
         {
             var help = Help(p, hint, inLine: true);
             help.Margin = new Thickness(18, 2, 0, 0);
             stack.Children.Add(help);
         }
         _engineStatus.Child = stack;
+    }
+
+    // The built-in model's download: what it is and a Download button; while it runs, a bar, how far, and Cancel.
+    private FrameworkElement DownloadBlock(Palette p)
+    {
+        var stack = new StackPanel { Margin = new Thickness(18, 4, 0, 0) };
+        if (_host.ModelDownload is { } progress)
+        {
+            var track = new Border { Height = 6, CornerRadius = new CornerRadius(3), Background = p.KeyBg, Margin = new Thickness(0, 4, 0, 6) };
+            var fill = new Border { CornerRadius = new CornerRadius(3), Background = p.Accent, HorizontalAlignment = HorizontalAlignment.Left };
+            track.Child = fill;
+            track.SizeChanged += (_, e) => fill.Width = e.NewSize.Width * progress.Fraction;
+            fill.Width = track.ActualWidth * progress.Fraction;
+            stack.Children.Add(track);
+            string text = progress.Checking
+                ? "Checking the file…"
+                : string.Create(CultureInfo.InvariantCulture, $"{progress.Done / 1e9:0.00} of {progress.Total / 1e9:0.0} GB · {progress.Fraction:0%}")
+                  + (progress.Retrying ? " · the connection dropped, trying again" : "");
+            stack.Children.Add(Help(p, text, inLine: true));
+            var cancel = ActionButton(p, "Cancel", primary: false, () => _host.CancelModelDownload());
+            cancel.Margin = new Thickness(0, 8, 0, 0);
+            stack.Children.Add(cancel);
+            return stack;
+        }
+
+        stack.Children.Add(Help(p, $"{LocalModel.Name} ({LocalModel.License}), {LocalModel.DownloadSizeText} from Hugging Face, once. It runs on this PC; what you type never leaves it.", inLine: true));
+        if (_host.ModelDownloadError is { } error)
+        {
+            var why = Controls.Text(error + ".", 12, p.DelFg);
+            why.Margin = new Thickness(0, 4, 0, 0);
+            stack.Children.Add(why);
+        }
+        var download = ActionButton(p, _host.ModelDownloadError is null ? $"Download ({LocalModel.DownloadSizeText})" : "Try again", primary: true,
+            () => _host.StartModelDownload());
+        download.Margin = new Thickness(0, 8, 0, 0);
+        stack.Children.Add(download);
+        return stack;
+    }
+
+    private static DrawnButton ActionButton(Palette p, string label, bool primary, Action action)
+    {
+        var b = new DrawnButton
+        {
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(14, 6, 14, 7),
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Background = primary ? p.Accent : p.KeyBg,
+            Cursor = Cursors.Hand,
+            Focusable = true,
+            FocusVisualStyle = Controls.FocusRing(p),
+            Child = Controls.Text(label, 12.5, primary ? p.OnAccent : p.Text, FontWeights.SemiBold),
+        };
+        AutomationProperties.SetName(b, label);
+        b.MouseEnter += (_, _) => b.Opacity = .88;
+        b.MouseLeave += (_, _) => b.Opacity = 1;
+        Controls.OnActivate(b, _ => action());
+        return b;
     }
 
     // ---------- tones ----------

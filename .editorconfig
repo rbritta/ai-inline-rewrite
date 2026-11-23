@@ -1,5 +1,5 @@
 # EditorConfig - https://editorconfig.org
-# Coding style for AI Inline Rewrite (C# 13 / .NET 9, WPF).
+# Coding style for AI Inline Rewrite (.NET 11, WPF).
 root = true
 
 [*]
@@ -20,7 +20,7 @@ end_of_line = crlf
 trim_trailing_whitespace = false
 
 [*.cs]
-# File-scoped namespaces (.NET 9).
+# File-scoped namespaces.
 csharp_style_namespace_declarations = file_scoped:suggestion
 
 # this. is not required

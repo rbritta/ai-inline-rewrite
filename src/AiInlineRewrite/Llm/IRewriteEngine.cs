@@ -38,8 +38,17 @@ public sealed class VersionDeclinedException() : Exception("The model declined t
 
 public static class RewriteEngines
 {
+    /// <summary>
+    /// Makes the built-in engine. The app sets it: the engine runs llama.cpp, which the tests and tools/ToneCheck do not
+    /// carry, so this file stays free of it.
+    /// </summary>
+    public static Func<IRewriteEngine>? BuiltIn { get; set; }
+
     /// <summary>The engine the settings choose. Only that one is created.</summary>
-    public static IRewriteEngine Create(Settings settings) => settings.Engine == EngineKind.Claude
-        ? new ClaudeClient(settings.ClaudeModel)
-        : new OllamaClient(settings.OllamaModel, settings.OllamaEndpoint);
+    public static IRewriteEngine Create(Settings settings) => settings.Engine switch
+    {
+        EngineKind.Claude => new ClaudeClient(settings.ClaudeModel),
+        EngineKind.BuiltIn => BuiltIn?.Invoke() ?? throw new NotSupportedException("The built-in engine runs only in the app"),
+        _ => new OllamaClient(settings.OllamaModel, settings.OllamaEndpoint),
+    };
 }

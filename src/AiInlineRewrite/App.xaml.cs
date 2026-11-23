@@ -8,8 +8,10 @@ namespace AiInlineRewrite;
 /// <summary>
 /// Starts one copy of the app. Starting it again while it runs opens the settings of the running copy instead.
 /// <c>--render-previews &lt;folder&gt;</c> renders the bubble and the settings window to PNG files without showing
-/// anything (docs/ARCHITECTURE.md), then exits. <c>--accept-injected</c> lets synthesized keystrokes drive AIR, for
-/// the automated smoke test (tools/smoke/smoke_test.py).
+/// anything (docs/ARCHITECTURE.md), then exits. <c>--check-builtin &lt;file.md&gt;</c> runs the built-in engine on
+/// sample sentences and writes what it answered (<see cref="Local.BuiltInCheck"/>), then exits.
+/// <c>--accept-injected</c> lets synthesized keystrokes drive AIR, for the automated smoke test
+/// (tools/smoke/smoke_test.py).
 /// </summary>
 public partial class App : Application
 {
@@ -32,6 +34,12 @@ public partial class App : Application
             return;
         }
 
+        if (e.Args.Length == 2 && e.Args[0] == "--check-builtin")
+        {
+            _ = CheckBuiltInAsync(e.Args[1]);
+            return;
+        }
+
         _single = new Mutex(initiallyOwned: true, MutexName, out bool first);
         _showSettings = new EventWaitHandle(false, EventResetMode.AutoReset, ShowSettingsEvent);
         if (!first)
@@ -46,6 +54,12 @@ public partial class App : Application
         _controller.Start();
         _wait = ThreadPool.RegisterWaitForSingleObject(_showSettings, (_, _) =>
             Dispatcher.BeginInvoke(() => _controller?.OpenSettings()), null, Timeout.Infinite, executeOnlyOnce: false);
+    }
+
+    private async Task CheckBuiltInAsync(string outFile)
+    {
+        int code = await Local.BuiltInCheck.RunAsync(outFile);
+        Shutdown(code);
     }
 
     // A bug in a handler must not take the whole app (and its keyboard hook) down; it is logged and the app goes on.

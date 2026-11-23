@@ -4,7 +4,7 @@ Thanks for your interest in improving AI Inline Rewrite.
 
 ## Set up, build and test
 
-Windows with the [.NET 9 SDK](https://dotnet.microsoft.com/download) (built and tested with 9.0.315 on Windows 11
+Windows with the [.NET 11 SDK](https://dotnet.microsoft.com/download) (built and tested with 11.0.100 on Windows 11
 x64). An engine, [Ollama](https://ollama.com) with a model pulled or an Anthropic API key, is needed to run the app and
 `tools/ToneCheck`, not to build or test.
 
@@ -15,8 +15,8 @@ dotnet build AiInlineRewrite.sln
 dotnet test tests\AiInlineRewrite.Tests
 ```
 
-- The app is `net9.0-windows` (WPF for the bubble and the settings, WinForms for the tray icon). The tests are a
-  plain `net9.0` xUnit project that **links** the pure source files under `src/AiInlineRewrite/Core` and the engine
+- The app is `net11.0-windows10.0.19041.0` (WPF for the bubble and the settings, WinForms for the tray icon). The tests are a
+  plain `net11.0` xUnit project that **links** the pure source files under `src/AiInlineRewrite/Core` and the engine
   clients under `src/AiInlineRewrite/Llm` (no reference to the app or to the desktop runtime). The engine tests answer
   from `FakeHttp`, a scripted handler: no Ollama, no Anthropic key, no network. They also check the version and the
   CHANGELOG, and run `tools/release-notes.ps1`.

@@ -21,6 +21,9 @@ public enum EngineState
 
     /// <summary>The engine answered with an error, or is too busy to answer.</summary>
     Failing,
+
+    /// <summary>Built-in only: the model is being downloaded; it gets ready by itself when the download ends.</summary>
+    Downloading,
 }
 
 /// <summary>Turns what an engine answers into a state, and a state into the two lines the bubble shows for it.</summary>
@@ -28,7 +31,8 @@ public static class EngineStatus
 {
     /// <summary>States the app cannot write in until the user fixes something; the bubble keeps showing them.</summary>
     public static bool Blocks(EngineState state) =>
-        state is EngineState.NotRunning or EngineState.ModelMissing or EngineState.NoKey or EngineState.KeyRefused;
+        state is EngineState.NotRunning or EngineState.ModelMissing or EngineState.NoKey or EngineState.KeyRefused
+            or EngineState.Downloading;
 
     /// <summary>Ollama: ready when the /api/tags answer lists the model ("qwen2.5" means "qwen2.5:latest").</summary>
     public static EngineState FromTags(string tagsJson, string model)
@@ -74,6 +78,9 @@ public static class EngineStatus
     /// <summary>The status line in the bubble's bar.</summary>
     public static string Status(EngineKind engine, EngineState state, string model) => (engine, state) switch
     {
+        (EngineKind.BuiltIn, EngineState.ModelMissing) => "The model is not on this PC yet",
+        (EngineKind.BuiltIn, EngineState.Downloading) => "Downloading the model",
+        (EngineKind.BuiltIn, EngineState.NotRunning or EngineState.Failing) => "The model could not run",
         (EngineKind.Claude, EngineState.NotRunning) => "Claude cannot be reached",
         (EngineKind.Claude, EngineState.ModelMissing) => $"The model {model} does not exist",
         (EngineKind.Claude, EngineState.NoKey) => "No Anthropic API key",
@@ -88,6 +95,9 @@ public static class EngineStatus
     /// <summary>The one step that fixes it, shown where the versions go.</summary>
     public static string Hint(EngineKind engine, EngineState state, string model) => (engine, state) switch
     {
+        (EngineKind.BuiltIn, EngineState.ModelMissing) => $"Download it once in the settings ({LocalModel.DownloadSizeText}).",
+        (EngineKind.BuiltIn, EngineState.Downloading) => "AIR is ready by itself when it ends; the settings show how far it is.",
+        (EngineKind.BuiltIn, EngineState.NotRunning or EngineState.Failing) => "Close programs that use a lot of memory, then type again.",
         (EngineKind.Claude, EngineState.NotRunning) => "Check the internet connection, then type again.",
         (EngineKind.Claude, EngineState.ModelMissing) => "Choose another model in the settings, such as Claude Haiku 5.5.",
         (EngineKind.Claude, EngineState.NoKey) => "Set the ANTHROPIC_API_KEY environment variable, then restart AIR.",

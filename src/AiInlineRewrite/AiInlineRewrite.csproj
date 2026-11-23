@@ -2,7 +2,9 @@
 
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
-        <TargetFramework>net9.0-windows</TargetFramework>
+        <TargetFramework>net11.0-windows10.0.19041.0</TargetFramework>
+        <!-- Windows 10 2004 and later: the WinRT StartupTask API for the Store package (Native/StartWithWindows.cs). -->
+        <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UseWPF>true</UseWPF>
@@ -36,6 +38,10 @@
     <ItemGroup>
         <!-- The official Anthropic SDK, for the Claude engine. -->
         <PackageReference Include="Anthropic" Version="13.12.0" />
+        <!-- The built-in engine: llama.cpp through LLamaSharp, on a GPU through Vulkan, else on the CPU. -->
+        <PackageReference Include="LLamaSharp" Version="0.30.0" />
+        <PackageReference Include="LLamaSharp.Backend.Cpu" Version="0.30.0" />
+        <PackageReference Include="LLamaSharp.Backend.Vulkan.Windows" Version="0.30.0" />
     </ItemGroup>
 
 </Project>

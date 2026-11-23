@@ -1,21 +1,23 @@
 # Engines
 
-AIR asks a language model for each version. It has two engines, chosen in the settings window (the Engine section)
+AIR asks a language model for each version. It has three engines, chosen in the settings window (the Engine section)
 or with `Engine` in `settings.json`:
 
-- **Ollama** (the default): an open model, `qwen2.5:7b`, running on your PC in [Ollama](https://ollama.com).
+- **Built-in** (the default): the open model Qwen2.5 7B Instruct, run by AIR itself. Nothing else to install; the
+  model is downloaded once from the settings.
+- **Ollama**: the same model, `qwen2.5:7b`, or another one, running in [Ollama](https://ollama.com).
 - **Claude**: Anthropic's models through the [Anthropic API](https://platform.claude.com/docs/en/build-with-claude/overview), called
   with the official Anthropic SDK for .NET. **Not validated yet:** it was tested only against a fake Anthropic API
   (the unit tests); no live call has been made ([TODO](../TODO.md#not-validated-yet)).
 
 Only the engine in the settings is created. With Claude, AIR never starts, checks or calls Ollama, and no Ollama
-state ("Ollama is not running") ever shows; with Ollama, nothing goes to Anthropic.
+state ("Ollama is not running") ever shows; with the built-in engine or Ollama, nothing goes to Anthropic.
 
 ## Reference machine
 
 AIR was built and tested on one PC, and every measurement in these docs comes from it:
 
-- Windows 11 x64, .NET SDK 9.0.315, Ollama 0.40.16
+- Windows 11 x64, .NET SDK 11.0.100 (9.0.315 for the measurements before 2026-11-23), Ollama 0.40.16
 - a 12 GB desktop GPU
 - a 24-core desktop CPU
 - 64 GB of RAM
@@ -25,17 +27,79 @@ Other configurations (other GPUs, CPU-only laptops, Windows 10) were not tested 
 
 ## Which one
 
-| | Ollama (default) | Claude |
-|---|---|---|
-| Where the model runs | on your PC | at Anthropic |
-| What you install | Ollama, and the model once (a 4.7 GB download) | nothing beyond AIR |
-| Video memory (reference machine) | 4.6 GiB with the model loaded on the GPU; none when it runs on the CPU | none |
-| RAM while loaded (reference machine) | about 750 MiB beside the video memory, or about 4.6 GiB on the CPU only | none |
-| Speed (reference machine) | a median of 0.13 s per version on the GPU, 4.0 s on the CPU only | not measured |
-| Internet | not needed | needed |
-| Account and credential | none | an Anthropic API key, or an `ant auth login` profile (below) |
-| Cost | free | billed per token by Anthropic, see [pricing](https://platform.claude.com/docs/en/about-claude/pricing) |
-| The sentence you type | stays on your PC (or goes to the Ollama machine you set) | goes to Anthropic's API |
+| | Built-in (default) | Ollama | Claude |
+|---|---|---|---|
+| Where the model runs | inside AIR, on your PC | in Ollama, on your PC | at Anthropic |
+| What you install | nothing beyond AIR; the model once from the settings (a 4.7 GB download) | Ollama, and the model once (a 4.7 GB download) | nothing beyond AIR |
+| Video memory (reference machine) | 4.7 GiB with the model on the GPU | 4.6 GiB with the model loaded on the GPU; none when it runs on the CPU | none |
+| RAM while loaded (reference machine) | about 770 MiB beside the video memory | about 750 MiB beside the video memory, or about 4.6 GiB on the CPU only | none |
+| Speed (reference machine) | a median of 0.44 s per version on the GPU (Vulkan) | a median of 0.13 s per version on the GPU, 4.0 s on the CPU only | not measured |
+| Internet | only for the download | not needed | needed |
+| Account and credential | none | none | an Anthropic API key, or an `ant auth login` profile (below) |
+| Cost | free | free | billed per token by Anthropic, see [pricing](https://platform.claude.com/docs/en/about-claude/pricing) |
+| The sentence you type | stays on your PC | stays on your PC (or goes to the Ollama machine you set) | goes to Anthropic's API |
+
+Both run Qwen2.5 7B Instruct at 4 bits. With Ollama's copy the built-in engine writes Ollama's versions; with its own
+download (the Qwen team's file) the versions differ often, at the same quality in a blind check
+([MODELS.md](MODELS.md#the-downloaded-file-and-ollamas)). Ollama is faster on an NVIDIA GPU (CUDA against Vulkan) and
+lets you pick another model.
+
+## Built-in
+
+### The model
+
+Qwen2.5 7B Instruct, made by the Qwen team at Alibaba Cloud under the Apache License 2.0: the GGUF file quantized to
+4 bits (Q4_K_M) that the Qwen team publishes in
+[Qwen/Qwen2.5-7B-Instruct-GGUF](https://huggingface.co/Qwen/Qwen2.5-7B-Instruct-GGUF) on Hugging Face, in two parts,
+4.7 GB in all. It is the same model as Ollama's `qwen2.5:7b`, quantized separately: the two files write different
+versions of about two sentences in three, and a blind check scored them the same
+([MODELS.md](MODELS.md#the-downloaded-file-and-ollamas)). AIR wraps the prompts tuned on Ollama
+([PROMPTS.md](PROMPTS.md)) the way Ollama does for this model and decodes greedily, as Ollama does at temperature 0.
+This engine has no other model to pick; another model means Ollama.
+
+### Getting the model
+
+AIR looks for the model in this order:
+
+1. `%LocalAppData%\AiInlineRewrite\models`, where its own download goes.
+2. Ollama's copy of `qwen2.5:7b`, when Ollama pulled it on this PC (in `%USERPROFILE%\.ollama\models`, or the folder
+   in `OLLAMA_MODELS`). AIR reads Ollama's manifest, checks that the file is the exact one it expects, and loads it
+   from there without copying it. Ollama does not need to be running.
+3. Neither: the bubble and the settings say the model is missing, and the settings offer **Download (4.7 GB)**. On the
+   first run, AIR opens the settings there.
+
+The download goes straight to Hugging Face, part by part. When the connection drops, or goes a minute without a byte,
+AIR tries again by itself from where it stopped, waiting 2 s, then 4, 8 and so on up to a minute; it gives up after 8
+tries in a row that bring nothing, and the button offers to try again. A download stopped by Cancel or by closing AIR
+also resumes where it stopped. Each part is checked against its SHA-256 before AIR uses it; a damaged part is
+deleted. (Fetching these files on 2026-11-23, Hugging Face closed the connection several times and sometimes
+slowed to a few KB/s, so expect a break or two.) The settings show how far it is, and the bubble says the model is downloading.
+When it ends, AIR is ready with no restart.
+
+### Running it
+
+AIR runs llama.cpp through [LLamaSharp](https://github.com/SciSharp/LLamaSharp) 0.30.0 (MIT), with two native builds
+next to the exe: Vulkan, for a GPU with a Vulkan driver (NVIDIA, AMD, Intel), and the CPU. It loads the model as soon
+as it finds it (when AIR starts, when the engine is picked, when the download ends): all layers on the GPU, else 16 of
+them, else none (the CPU alone). On the reference machine loading took
+about 2 s, with all 29 layers on the GPU. After 30 minutes without a rewrite, AIR frees the model and its memory; the
+next pause loads it again.
+
+When the model cannot run (not enough memory, most likely), the bubble says "The model could not run" and asks to
+close programs that use a lot of memory. The diagnostic log (`DiagnosticLog`) records the device llama.cpp picked and
+how many layers went to the GPU.
+
+### Check it on your PC
+
+`AiInlineRewrite.exe --check-builtin result.md` runs sample sentences through every tone with the built-in engine and
+writes a table with each version and its time, plus the llama.cpp log next to it (`result.log`, with the device). It
+exits 0 when every version was written, 1 when one failed, and 2 when the model is missing.
+
+### Without a video card (built-in)
+
+**Not validated yet:** the CPU fallback was not run in the app ([TODO](../TODO.md#not-validated-yet)). The probe this
+engine came from took 3.5 s a version on the reference CPU with 8 threads ([MODELS.md](MODELS.md)); AIR uses half the
+logical cores, up to 8.
 
 ## Ollama
 
@@ -237,10 +301,11 @@ files cannot be read shows as a refused key.
 
 ## Other backends
 
-Built in: Ollama, with any model it serves, local or on another machine, and Claude. Other servers (LM Studio,
-llama.cpp's server, vLLM, OpenAI-compatible APIs, other cloud providers) are not built in.
+Built in: the built-in engine, Ollama (with any model it serves, local or on another machine) and Claude. Other
+servers (LM Studio, llama.cpp's server, vLLM, OpenAI-compatible APIs, other cloud providers) are not built in.
 
-An engine is one class behind one interface, `IRewriteEngine` in `src/AiInlineRewrite/Llm/`: `RewriteAsync` streams a
+An engine is one class behind one interface, `IRewriteEngine` in `src/AiInlineRewrite/Llm/` (the built-in one lives
+in `src/AiInlineRewrite/Local/`): `RewriteAsync` streams a
 version, `CheckAsync` says whether it can write now, `PreloadAsync` gets it ready. A new one is that class, a value in
 `EngineKind`, a case in `RewriteEngines.Create`, its choices in `EngineChoices`, its status texts in `EngineStatus`,
 and tests against a fake HTTP handler like `OllamaClientTests` and `ClaudeClientTests`.
@@ -265,11 +330,12 @@ The container publishes Ollama on port 11434, the port of AIR's default endpoint
 
 ## Platforms
 
-- **Built and tested on** the [reference machine](#reference-machine): Windows 11 x64 with the .NET SDK 9.0.315. CI
+- **Built and tested on** the [reference machine](#reference-machine): Windows 11 x64 with the .NET SDK 11.0.100. CI
   builds, tests and publishes on GitHub's `windows-latest` runners.
-- **Windows 10 x64**: .NET 9 supports it, but AIR was not tested on it ([TODO](../TODO.md#not-validated-yet)).
+- **Windows 10 x64**: AIR was not tested on it ([TODO](../TODO.md#not-validated-yet)).
 - **Linux and macOS: no.** WPF and WinForms are Windows-only, and what AIR does is Windows itself: low-level hooks
   (`SetWindowsHookEx`), UI Automation of other apps' text fields, `SendInput` and the Win32 clipboard. It would be a
   different app, not a port. The pure logic and the engine clients are plain .NET, and their tests target plain
-  `net9.0`, but they were run on Windows only.
+  `net11.0`, but they were run on Windows only.
+- **The built-in engine** ships the Windows x64 builds of llama.cpp only.
 - Ollama and the Anthropic API serve clients on any platform; only AIR is Windows-only.
