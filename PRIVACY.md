@@ -41,7 +41,12 @@ IP address and the file asked for); no text you type is part of it.
 - **A diagnostic log**, only if you turn on `DiagnosticLog`: events and timings, never what you type.
 
 AIR keeps no history of what you type: the current sentence and its versions stay in memory while the bubble shows
-them. Uninstalling AIR from the Microsoft Store removes its settings and the downloaded model.
+them.
+
+Installed from the Microsoft Store, AIR keeps its settings and the model in its own package storage, and Windows
+deletes them when you uninstall it. One exception: if AIR from the zip ran on this PC before, the Store copy uses the
+folders that copy made (`%AppData%\AiInlineRewrite`, `%LocalAppData%\AiInlineRewrite`), and those stay until you
+delete them.
 
 ## The clipboard
 

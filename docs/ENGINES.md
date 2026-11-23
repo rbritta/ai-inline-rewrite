@@ -61,7 +61,8 @@ This engine has no other model to pick; another model means Ollama.
 
 AIR looks for the model in this order:
 
-1. `%LocalAppData%\AiInlineRewrite\models`, where its own download goes.
+1. `%LocalAppData%\AiInlineRewrite\models`, where its own download goes. Installed from the Microsoft Store, AIR
+   keeps it in its package storage instead, and uninstalling deletes it.
 2. Ollama's copy of `qwen2.5:7b`, when Ollama pulled it on this PC (in `%USERPROFILE%\.ollama\models`, or the folder
    in `OLLAMA_MODELS`). AIR reads Ollama's manifest, checks that the file is the exact one it expects, and loads it
    from there without copying it. Ollama does not need to be running.

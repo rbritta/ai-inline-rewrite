@@ -46,7 +46,7 @@ dotnet test tests\AiInlineRewrite.Tests
   does).
 - Beyond that, check by hand in real apps (Notepad, a browser, a chat app), with the AIR key and each tone.
 
-CI builds, tests and publishes the exe on Windows for every push and pull request.
+CI builds, tests and publishes the app folder on Windows for every push and pull request.
 
 ## Prompts
 
@@ -74,9 +74,9 @@ The version lives in one place, `<Version>` in `src/AiInlineRewrite/AiInlineRewr
 it is three-part and that `CHANGELOG.md` has its section right under `Unreleased`.
 
 Bump `<Version>`, move the `Unreleased` notes under `## [X.Y.Z] - YYYY-MM-DD`, push, wait for CI, then push a
-`vX.Y.Z` tag. The release workflow builds, tests and publishes the exe, zips it with the README and the license, and
-publishes a GitHub Release with the CHANGELOG section of that version as its notes (`tools/release-notes.ps1`
-refuses a tag that does not name the version).
+`vX.Y.Z` tag. The release workflow builds, tests and publishes the app folder, zips it with the README and the license,
+keeps an unsigned Microsoft Store package (MSIX) as a run artifact, and publishes a GitHub Release with the CHANGELOG
+section of that version as its notes (`tools/release-notes.ps1` refuses a tag that does not name the version).
 
 ## Style
 

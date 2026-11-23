@@ -25,8 +25,11 @@ state it as fact.
 - **The model download in the app.** The downloader was tested against a fake Hugging Face (the unit tests: resume,
   restart, retries after a drop, a stall or a busy server, damaged file, no connection), and the official files were
   fetched and checked outside the app. A full download from the settings window was not run.
-- **The Store package installed.** The package was built and signed with a test certificate. Not yet: installing it
-  and checking the tray, the settings, the startup task, where its files land, and what uninstalling removes.
+- **The Store package on other PCs.** On the reference machine on 2026-11-23, the package signed with a test
+  certificate installed and ran with its package identity: the settings, the built-in engine (on Ollama's copy), a
+  Portuguese sentence rewritten and applied in a text box, and "Start with Windows" turning the startup task on and
+  off from the tray. Uninstalling removed the package, its storage and the startup task. Not yet: a PC that never had
+  AIR or Ollama (the first run and the download inside the package), and the package as the Store signs it.
 - **Ollama in Docker.** The steps in docs/ENGINES.md follow the documentation of the `ollama/ollama` image and were not
   run; AIR was tested against a native Ollama only.
 

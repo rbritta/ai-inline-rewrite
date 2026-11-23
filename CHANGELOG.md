@@ -6,15 +6,16 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-23
+
 ### Added
 - **A built-in engine, now the default.** AIR runs Qwen2.5 7B Instruct by itself through LLamaSharp (llama.cpp): on
   the GPU through Vulkan when there is one, on the CPU otherwise. Nothing else to install: the settings download the
   model once (4.7 GB, Qwen's official files on Hugging Face, tried again by itself when the connection drops or stalls,
-  resumed where it stopped, and checked against their SHA-256),
-  or AIR uses Ollama's `qwen2.5:7b` when it is already on the PC. On the reference machine it takes a median of 0.45 s
-  a version. The downloaded file is the Qwen team's own 4-bit file, not Ollama's: the two write different versions of
-  two sentences in three, and scored the same in a blind check (`docs/MODELS.md`). It frees the model after 30 minutes
-  without use.
+  resumed where it stopped, and checked against their SHA-256), or AIR uses Ollama's `qwen2.5:7b` when it is already
+  on the PC. On the reference machine it takes a median of 0.45 s a version. The downloaded file is the Qwen team's
+  own 4-bit file, not Ollama's: the two write different versions of two sentences in three, and scored the same in a
+  blind check (`docs/MODELS.md`). It frees the model after 30 minutes without use.
 - On the first run with the built-in engine and no model yet, AIR opens the settings at the download.
 - A Microsoft Store package: the MSIX manifest and icons in `packaging/`, and `tools/pack-msix.ps1`. Each release also
   keeps an unsigned package. In the package, "Start with Windows" is a Windows startup task.
@@ -107,5 +108,8 @@ The first public version.
 - A self-contained single-file exe for Windows x64, built and released by CI on a `vX.Y.Z` tag, with the zip's
   SHA-256 checksum and a build provenance attestation to verify it (SECURITY.md).
 
-[Unreleased]: https://github.com/rbritta/ai-inline-rewrite/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/rbritta/ai-inline-rewrite/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.3.0
+[0.2.1]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.2.1
+[0.2.0]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.2.0
 [0.1.0]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.1.0

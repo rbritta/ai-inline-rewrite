@@ -39,12 +39,12 @@ jobs:
         shell: pwsh
         run: ./tools/coverage-summary.ps1 -Path TestResults
 
-      - name: Publish (self-contained single file)
+      - name: Publish (self-contained folder)
         run: dotnet publish src/AiInlineRewrite/AiInlineRewrite.csproj -p:PublishProfile=win-x64 --nologo
 
-      - name: Upload the exe
+      - name: Upload the app folder
         uses: actions/upload-artifact@v7
         with:
           name: AiInlineRewrite-win-x64
-          path: artifacts/publish/win-x64/AiInlineRewrite.exe
+          path: artifacts/publish/win-x64/
           if-no-files-found: error

@@ -271,8 +271,8 @@ dotnet run --project tools\ToneCheck -c Release                      # every ton
 dotnet run --project tools\ToneCheck -c Release -- --engine claude    # the same through Claude (bills the account)
 ```
 
-CI builds, tests (with a coverage summary in the job log) and publishes the exe on Windows for every push and pull
-request; a `vX.Y.Z` tag publishes a GitHub Release. See [CONTRIBUTING.md](CONTRIBUTING.md) and
+CI builds, tests (with a coverage summary in the job log) and publishes the app folder on Windows for every push and
+pull request; a `vX.Y.Z` tag publishes a GitHub Release. See [CONTRIBUTING.md](CONTRIBUTING.md) and
 [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ```text
