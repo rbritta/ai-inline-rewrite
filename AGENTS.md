@@ -18,7 +18,7 @@ opens pick mode; the chosen version replaces the sentence in place (Backspaces a
 | `src/AiInlineRewrite/Core/` | pure logic, linked into the tests: `Prompts`, `TextShape`, `Sentence`, `WordDiff`, `Lang`, `PickMode`, `AirKeyDetector`, `AirKey`, `Settings`, `SettingsStore`, `EngineStatus`, `EngineChoices`, `LocalModel`, `Tone`, `Log` |
 | `src/AiInlineRewrite/Llm/` | the engines behind `IRewriteEngine`: `OllamaClient` (streaming `/api/generate`, `/api/tags` check and model list), `ClaudeClient` (Anthropic SDK, streaming Messages, Models API check); `RewriteEngines.Create` makes the one in the settings; `ModelDownloader` (the built-in model from Hugging Face) |
 | `src/AiInlineRewrite/Local/` | the built-in engine: `BuiltInEngine` (LLamaSharp, llama.cpp on Vulkan or the CPU) and `BuiltInCheck` (`--check-builtin`) |
-| `src/AiInlineRewrite/Native/` | keyboard and mouse hooks, `SendInput` paste, clipboard snapshot, Start with Windows |
+| `src/AiInlineRewrite/Native/` | keyboard and mouse hooks, recorded shortcuts (`GlobalHotKeys`), `SendInput` paste, clipboard snapshot, Start with Windows |
 | `src/AiInlineRewrite/Automation/FocusedText.cs` | the focused field's text, caret and password flag |
 | `src/AiInlineRewrite/Ui/` | the code-built bubble and settings window, preview, palette, vector icons, offscreen renderer |
 | `tests/AiInlineRewrite.Tests/` | xUnit on plain `net11.0`; it **links** the `Core` and `Llm` files, with no reference to the app; `FakeHttp` stands in for Ollama and the Anthropic API |
@@ -47,7 +47,8 @@ dotnet publish src\AiInlineRewrite -p:PublishProfile=win-x64           # the rel
   it. The engine clients in `Llm/` use only HttpClient and the Anthropic SDK. A new `Core` or `Llm` file is added to
   the `<Compile Include>` list of the test project.
 - The hook takes keys from the app only in pick mode (`PickMode.KeyDown` returns `Swallow`), ignores injected
-  events, and never uses Ctrl+Alt (AltGr on ABNT2 keyboards). Right Ctrl keeps working as Ctrl: only a press and
+  events, and never uses Ctrl+Alt (AltGr on ABNT2 keyboards); a recorded shortcut goes to Windows (RegisterHotKey),
+  never with Ctrl+Alt (`AirKeys.Problem`). Right Ctrl keeps working as Ctrl: only a press and
   release with no other key and no mouse input counts as a tap (`AirKeyDetector`).
 - Nothing the user types is written to disk: the log holds events only and is off by default; password fields are
   never read.

@@ -135,6 +135,8 @@ public static class PreviewRenderer
         public void SetTheme(AppTheme theme) { }
         public void SetAirKey(AirKey key) { }
         public void SetOffKey(AirKey key) { }
+        public void PauseKeys(bool paused) { }
+        public string? ShortcutProblem(AirKey key) => AirKeys.Problem(key);
         public void SetFollow(bool on) { }
         public EngineState EngineState => state;
         public void SetEngine(EngineKind engine) { }

@@ -5,18 +5,22 @@ using System.Text.Json.Serialization;
 namespace AiInlineRewrite.Core;
 
 /// <summary>
-/// Loads and saves <see cref="Settings"/> as JSON, enums by name. A file that cannot be read is kept aside as
-/// settings.unreadable.json and the defaults are used, so a bad hand edit never stops the app.
+/// Loads and saves <see cref="Settings"/> as JSON, enums and keys by name. A file that cannot be read is kept aside as
+/// settings.unreadable.json and the defaults are used, so a bad hand edit never stops the app; a key name that is not
+/// known just falls back to a default key (<see cref="Settings.Normalize"/>).
 /// </summary>
 public static class SettingsStore
 {
     public const string FileName = "settings.json";
     public const string UnreadableFileName = "settings.unreadable.json";
 
+    // A file on this PC, never put in a web page: the relaxed encoder writes "Ctrl+Shift+Space" as such, where the
+    // default one writes the + as +.
     private static readonly JsonSerializerOptions Json = new()
     {
         WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() },
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Converters = { new JsonStringEnumConverter(), new AirKeyConverter() },
     };
 
     /// <summary>%AppData%\AiInlineRewrite</summary>
@@ -63,6 +67,20 @@ public static class SettingsStore
         string temp = path + ".tmp";
         File.WriteAllText(temp, Serialize(settings));
         File.Move(temp, path, overwrite: true);
+    }
+
+    // A key as its name ("RightCtrlTap", "Ctrl+Shift+Space"); a name that is not a key reads as null.
+    private sealed class AirKeyConverter : JsonConverter<AirKey>
+    {
+        public override AirKey Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        {
+            if (reader.TokenType == JsonTokenType.String) return AirKeys.Parse(reader.GetString())!;
+            reader.Skip(); // a number, an object or an array: not a key
+            return null!;
+        }
+
+        public override void Write(Utf8JsonWriter writer, AirKey value, JsonSerializerOptions options) =>
+            writer.WriteStringValue(AirKeys.Name(value));
     }
 
     private static void TryCopy(string from, string to)

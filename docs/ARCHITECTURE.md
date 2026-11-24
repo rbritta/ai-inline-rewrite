@@ -32,10 +32,12 @@ keyboard hook ──> AppController ──(pause)──> FocusedText (UI Automat
    enabled tone runs at once (see *Engines* below); every partial answer goes through `TextShape.MatchPunctuation`
    before it is shown. A version with non-Latin letters becomes an error row, and a version the model declines (a
    Claude refusal) says so in its row while the others go on. Typing again cancels the whole generation.
-4. **Pick.** The AIR key (and the off key, with the same rules) comes from `AirKeyDetector`: a tap key (Right Ctrl,
-   Right Shift) fires on release when it was pressed alone, within 600 ms, with no other key held and no mouse input
-   (a mouse hook is installed only while the key is down, to catch Ctrl+click and Ctrl+wheel); a plain key (Pause,
-   Scroll Lock, Insert) fires on key down and is swallowed. `PickMode` is a pure state machine: it says, for each key, whether the hook swallows it and what
+4. **Pick.** The AIR key and the off key are each a tap or a shortcut (`AirKey`). A tap (Right or Left Ctrl or
+   Shift) comes from `AirKeyDetector`: it fires on release when the key was pressed alone, within 600 ms, with no other
+   key held and no mouse input (a mouse hook is installed only while the key is down, to catch Ctrl+click and
+   Ctrl+wheel). A shortcut is registered with Windows (`GlobalHotKeys`, RegisterHotKey, no auto-repeat), which keeps
+   it from the app and reports it as `WM_HOTKEY`; the hook lets its key pass untouched, so pick mode does not take it
+   for another key. `PickMode` is a pure state machine: it says, for each key, whether the hook swallows it and what
    to do (move, apply, dismiss, exit). Only in pick mode does the hook take keys from the app.
 5. **Apply.** `Sentence.BackspacesToReplace` checks that the field still ends with the sentence the version was
    written for (a CRLF counts as one Backspace). If it does, `TextInjector` releases any held modifier, sends
@@ -94,7 +96,9 @@ size. Choosing a layout or a theme floats a `PreviewWindow` beside it, rendered 
 page takes its choices from `EngineChoices` (Ollama's installed models, asked through the host; the three Claude
 models) and redraws its status line, and the dot beside Engine in the menu, when the app reports a new engine state
 (`SyncEngine`). The AIR key and the off key are never the same: `AirKeys.ChooseAir` and `ChooseOff` swap them when
-one takes the other's key. `Palette` holds the light and dark brushes;
+one takes the other's tap. *Custom shortcut…* turns a key's dropdown into a recorder: AIR's keys pause meanwhile
+(`PauseKeys`), and a chord is checked by `AirKeys.Problem` and then against the other apps (`ShortcutProblem`) before
+it is set. `Palette` holds the light and dark brushes;
 `WindowsTheme` reads `AppsUseLightTheme` and follows its changes. `Icons` draws the Q, the gear, the follow arrow and
 the rest as vector geometry, so they stay sharp at any scale.
 

@@ -41,6 +41,15 @@ public interface ISettingsHost
     /// <summary>Sets the off key; when that was the AIR key, the AIR key takes the old off key.</summary>
     void SetOffKey(AirKey key);
 
+    /// <summary>
+    /// While a shortcut is being recorded: AIR's keys do nothing and its shortcuts are let go, so every key pressed
+    /// reaches the window, and whether another app holds a shortcut can be asked.
+    /// </summary>
+    void PauseKeys(bool paused);
+
+    /// <summary>Why a recorded shortcut cannot be used (the rules, or another app holds it); null when it can.</summary>
+    string? ShortcutProblem(AirKey key);
+
     void SetFollow(bool on);
 
     /// <summary>The state of the engine in use (Unknown while it is being checked), for the Engine section.</summary>
@@ -115,6 +124,12 @@ public sealed class SettingsWindow : Window
     private Toggle? _followToggle;
     private Border? _followIconHost;
     private Border? _keysBody;
+
+    // recording a shortcut: the slot ("air" or "off"), the box that shows what is held, and the line under it
+    private const string RecordChoice = "record";
+    private string? _recording;
+    private TextBlock? _recordKeys;
+    private TextBlock? _recordHint;
     private Ellipse? _engineDot;
 
     // the Engine section: filled again when the engine, the model or Ollama's model list changes; the status line
@@ -151,7 +166,12 @@ public sealed class SettingsWindow : Window
         _previewTimer.Tick += (_, _) => HidePreview();
         PreviewKeyDown += (_, e) =>
         {
-            if (e.Key == Key.Escape)
+            if (_recording is not null)
+            {
+                e.Handled = true; // every key, Esc and Tab too, goes to the shortcut being recorded
+                Record(e);
+            }
+            else if (e.Key == Key.Escape)
             {
                 e.Handled = true;
                 Close();
@@ -172,6 +192,7 @@ public sealed class SettingsWindow : Window
         LocationChanged += (_, _) => HidePreview();
         Closed += (_, _) =>
         {
+            StopRecording(null, refill: false);
             _previewTimer.Stop();
             _preview.Close();
         };
@@ -183,6 +204,7 @@ public sealed class SettingsWindow : Window
     public void Rebuild()
     {
         double scroll = _scroll?.VerticalOffset ?? 0;
+        StopRecording(null, refill: false);
         HidePreview();
         var p = _host.Palette;
         MaxHeight = SystemParameters.WorkArea.Height - 24 + 2 * Pad;
@@ -236,6 +258,7 @@ public sealed class SettingsWindow : Window
     public void ShowPage(SettingsPage page)
     {
         if (page == _page || _scroll is null) return;
+        StopRecording(null, refill: false);
         HidePreview();
         _page = page;
         FillPage(_host.Palette);
@@ -538,7 +561,7 @@ public sealed class SettingsWindow : Window
             "Off: the bubble stays where you leave it. The same arrow beside the gear switches it.", _followToggle, _followIconHost));
     }
 
-    // The AIR key and the off key, filled again when either changes: taking the other's key swaps the two.
+    // The AIR key and the off key, filled again when either changes: choosing the other's tap swaps the two.
     private Border KeysSection(Palette p)
     {
         _keysBody = new Border();
@@ -550,34 +573,145 @@ public sealed class SettingsWindow : Window
     {
         if (_keysBody is null) return;
         var s = _host.Settings;
-        var options = AirKeys.All.Select(k => (k.ToString(), AirKeys.Label(k))).ToList();
-        var air = new Dropdown(p, options, s.AirKey.ToString(), "AIR key");
-        air.Chosen += v =>
-        {
-            _host.SetAirKey(Enum.Parse<AirKey>(v));
-            FillKeys(_host.Palette, "air");
-        };
-        var off = new Dropdown(p, options, s.OffKey.ToString(), "Off key");
-        off.Chosen += v =>
-        {
-            _host.SetOffKey(Enum.Parse<AirKey>(v));
-            FillKeys(_host.Palette, "off");
-        };
         var stack = new StackPanel();
-        stack.Children.Add(KeySection(p, "AIR key", "Opens pick mode: then ↑ ↓ and Enter, a number, or Esc. A tap is a press and release with no other key.", air));
-        stack.Children.Add(KeySection(p, "Off key", "Puts AIR to sleep: the bubble closes and AIR stops reading until the AIR key wakes it. Choosing the AIR key here swaps the two.", off));
+        stack.Children.Add(KeySection(p, "air", "AIR key", "Opens pick mode: then ↑ ↓ and Enter, a number, or Esc. A tap is a press and release with no other key.", s.AirKey, focus));
+        stack.Children.Add(KeySection(p, "off", "Off key", "Puts AIR to sleep: the bubble closes and AIR stops reading until the AIR key wakes it. Picking the AIR key's tap swaps them.", s.OffKey, focus));
         _keysBody.Child = stack;
-        if (focus == "air") air.Focus();
-        else if (focus == "off") off.Focus();
     }
 
-    private static Border KeySection(Palette p, string title, string help, Dropdown select)
+    // A key's dropdown: the four taps, the recorded shortcut in use, and "Custom shortcut…", which turns the dropdown
+    // into the box that records one.
+    private Border KeySection(Palette p, string slot, string title, string help, AirKey current, string? focus)
     {
         var stack = new StackPanel();
         stack.Children.Add(H3(p, title));
         stack.Children.Add(Help(p, help));
+        if (_recording == slot)
+        {
+            var box = Recorder(p);
+            stack.Children.Add(box);
+            _recordHint = Help(p, "Hold Ctrl, Alt or Win (Shift too, if you like) and press a key. Esc cancels.", inLine: true);
+            _recordHint.Margin = new Thickness(0, 6, 0, 0);
+            stack.Children.Add(_recordHint);
+            Dispatcher.BeginInvoke(DispatcherPriority.Input, () => box.Focus());
+            return Section(p, false, stack);
+        }
+
+        var options = AirKeys.Taps.Select(k => (AirKeys.Name(k), AirKeys.Label(k))).ToList();
+        if (!current.IsTap) options.Add((AirKeys.Name(current), AirKeys.Label(current)));
+        options.Add((RecordChoice, "Custom shortcut…"));
+        var select = new Dropdown(p, options, AirKeys.Name(current), title);
+        select.Chosen += v =>
+        {
+            if (v == RecordChoice)
+            {
+                StartRecording(slot);
+                return;
+            }
+            if (AirKeys.Parse(v) is not { } key) return;
+            if (slot == "air") _host.SetAirKey(key);
+            else _host.SetOffKey(key);
+            FillKeys(_host.Palette, slot);
+        };
         stack.Children.Add(select);
+        if (focus == slot) select.Focus();
         return Section(p, false, stack);
+    }
+
+    private Border Recorder(Palette p)
+    {
+        _recordKeys = Controls.Text("Press the keys…", 13, p.Muted);
+        // a DrawnButton, not a plain Border, so screen readers (and UI Automation) see the box by its name
+        var box = new DrawnButton
+        {
+            Kind = AutomationControlType.Edit,
+            Background = p.Field,
+            BorderBrush = p.Accent,
+            BorderThickness = new Thickness(1.5),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(10, 6.5, 11, 6.5),
+            Focusable = true,
+            FocusVisualStyle = null,
+            Cursor = Cursors.IBeam,
+            Child = _recordKeys,
+        };
+        AutomationProperties.SetName(box, "Press the shortcut");
+        // a click elsewhere, or another window, ends the recording
+        box.LostKeyboardFocus += (_, _) => StopRecording(null, refill: true);
+        return box;
+    }
+
+    private void StartRecording(string slot)
+    {
+        _recording = slot;
+        _host.PauseKeys(true);
+        FillKeys(_host.Palette, focus: null);
+    }
+
+    // Ends the recording: with a shortcut, it becomes the key; without, nothing changes.
+    private void StopRecording(AirKey? chosen, bool refill)
+    {
+        if (_recording is not { } slot) return;
+        _recording = null;
+        _recordKeys = null;
+        _recordHint = null;
+        _host.PauseKeys(false);
+        if (chosen is not null)
+        {
+            if (slot == "air") _host.SetAirKey(chosen);
+            else _host.SetOffKey(chosen);
+        }
+        if (refill) FillKeys(_host.Palette, IsActive ? slot : null);
+    }
+
+    // A key pressed while recording: modifiers show as they are held; a key with them is checked and, when it can be
+    // used, becomes the shortcut; when not, the reason shows and the recording goes on.
+    private void Record(KeyEventArgs e)
+    {
+        var key = e.Key switch
+        {
+            Key.System => e.SystemKey,
+            Key.ImeProcessed => e.ImeProcessedKey,
+            _ => e.Key,
+        };
+        var held = Keyboard.Modifiers;
+        var mods = (held.HasFlag(ModifierKeys.Control) ? KeyMods.Ctrl : KeyMods.None)
+            | (held.HasFlag(ModifierKeys.Alt) ? KeyMods.Alt : KeyMods.None)
+            | (held.HasFlag(ModifierKeys.Shift) ? KeyMods.Shift : KeyMods.None)
+            | (held.HasFlag(ModifierKeys.Windows) ? KeyMods.Win : KeyMods.None);
+        if (key == Key.Escape && mods == KeyMods.None)
+        {
+            StopRecording(null, refill: true);
+            return;
+        }
+        int vk = KeyInterop.VirtualKeyFromKey(key);
+        if (vk == 0 || Vk.IsModifier(vk))
+        {
+            ShowRecorded(mods == KeyMods.None ? null : AirKeys.ModsLabel(mods) + "+…", problem: null);
+            return;
+        }
+        var shortcut = AirKey.Shortcut(mods, vk);
+        bool air = _recording == "air";
+        string? problem = shortcut == (air ? _host.Settings.OffKey : _host.Settings.AirKey)
+            ? $"{AirKeys.Label(shortcut)} is the {(air ? "off key" : "AIR key")} already: record another."
+            : _host.ShortcutProblem(shortcut);
+        if (problem is null) StopRecording(shortcut, refill: true);
+        else ShowRecorded(AirKeys.Label(shortcut), problem);
+    }
+
+    private void ShowRecorded(string? keys, string? problem)
+    {
+        var p = _host.Palette;
+        if (_recordKeys is not null)
+        {
+            _recordKeys.Text = keys ?? "Press the keys…";
+            _recordKeys.Foreground = keys is null ? p.Muted : p.Text;
+        }
+        if (_recordHint is not null && problem is not null)
+        {
+            _recordHint.Text = problem;
+            _recordHint.Foreground = p.DelFg;
+        }
     }
 
     private FrameworkElement ChoiceSection(Palette p, string kind, string title, IReadOnlyList<(string, string)> options, string selected, bool first = false)

@@ -9,7 +9,7 @@ public class AirKeyDetectorTests
     public void A_quick_press_and_release_of_Right_Ctrl_alone_is_a_tap()
     {
         var d = new AirKeyDetector(AirKey.RightCtrlTap);
-        Assert.False(d.KeyDown(Vk.RControl, 0));
+        d.KeyDown(Vk.RControl, 0);
         Assert.True(d.Armed);
         Assert.True(d.KeyUp(Vk.RControl, 150));
         Assert.False(d.Armed);
@@ -96,74 +96,39 @@ public class AirKeyDetectorTests
     }
 
     [Theory]
-    [InlineData(AirKey.Pause, Vk.Pause)]
-    [InlineData(AirKey.ScrollLock, Vk.Scroll)]
-    [InlineData(AirKey.Insert, Vk.Insert)]
-    public void A_plain_key_fires_on_its_key_down_once_while_held(AirKey key, int vk)
+    [InlineData("LeftCtrlTap", Vk.LControl)]
+    [InlineData("LeftShiftTap", Vk.LShift)]
+    public void Left_Ctrl_and_Left_Shift_taps_work_the_same_way(string name, int vk)
     {
-        var d = new AirKeyDetector(key);
-        Assert.False(d.IsTap);
-        Assert.True(d.KeyDown(vk, 0));
-        Assert.False(d.KeyDown(vk, 500)); // auto-repeat
-        Assert.False(d.KeyUp(vk, 600));
-        Assert.True(d.KeyDown(vk, 700));
-    }
-
-    [Theory]
-    [InlineData(AirKey.RightCtrlTap, Vk.RControl, true, "Tap Right Ctrl")]
-    [InlineData(AirKey.RightShiftTap, Vk.RShift, true, "Tap Right Shift")]
-    [InlineData(AirKey.Pause, Vk.Pause, false, "Pause")]
-    [InlineData(AirKey.ScrollLock, Vk.Scroll, false, "Scroll Lock")]
-    [InlineData(AirKey.Insert, Vk.Insert, false, "Insert")]
-    public void Each_choice_has_its_key_kind_and_label(AirKey key, int vk, bool tap, string label)
-    {
-        Assert.Equal(vk, AirKeys.VirtualKey(key));
-        Assert.Equal(tap, AirKeys.IsTap(key));
-        Assert.Equal(label, AirKeys.Label(key));
-    }
-
-    [Theory]
-    [InlineData(AirKey.RightCtrlTap, AirKey.RightShiftTap)]
-    [InlineData(AirKey.Pause, AirKey.RightShiftTap)]
-    [InlineData(AirKey.ScrollLock, AirKey.RightShiftTap)]
-    [InlineData(AirKey.Insert, AirKey.RightShiftTap)]
-    [InlineData(AirKey.RightShiftTap, AirKey.RightCtrlTap)] // never the AIR key itself
-    public void The_default_off_key_is_a_tap_of_Right_Shift_unless_that_is_the_AIR_key(AirKey airKey, AirKey off)
-    {
-        Assert.Equal(off, AirKeys.DefaultOffKey(airKey));
-        Assert.NotEqual(airKey, AirKeys.DefaultOffKey(airKey));
-    }
-
-    [Theory]
-    [InlineData(AirKey.Pause, AirKey.Pause, AirKey.RightShiftTap)]               // a free key: the off key stays
-    [InlineData(AirKey.RightShiftTap, AirKey.RightShiftTap, AirKey.RightCtrlTap)] // the off key's: the two swap
-    [InlineData(AirKey.RightCtrlTap, AirKey.RightCtrlTap, AirKey.RightShiftTap)]  // the same again: nothing changes
-    public void Choosing_the_AIR_key_never_leaves_both_on_one_key(AirKey key, AirKey air, AirKey off)
-    {
-        var chosen = AirKeys.ChooseAir(AirKey.RightCtrlTap, AirKey.RightShiftTap, key);
-        Assert.Equal((air, off), chosen);
-        Assert.NotEqual(chosen.Air, chosen.Off);
-    }
-
-    [Theory]
-    [InlineData(AirKey.Insert, AirKey.RightCtrlTap, AirKey.Insert)]              // a free key: the AIR key stays
-    [InlineData(AirKey.RightCtrlTap, AirKey.RightShiftTap, AirKey.RightCtrlTap)] // the AIR key's: the two swap
-    [InlineData(AirKey.RightShiftTap, AirKey.RightCtrlTap, AirKey.RightShiftTap)] // the same again: nothing changes
-    public void Choosing_the_off_key_never_leaves_both_on_one_key(AirKey key, AirKey air, AirKey off)
-    {
-        var chosen = AirKeys.ChooseOff(AirKey.RightCtrlTap, AirKey.RightShiftTap, key);
-        Assert.Equal((air, off), chosen);
-        Assert.NotEqual(chosen.Air, chosen.Off);
+        var d = new AirKeyDetector(AirKeys.Parse(name)!);
+        d.KeyDown(vk, 0);
+        Assert.True(d.KeyUp(vk, 100));
+        d.KeyDown(vk, 1000);
+        d.KeyDown(Vk.A, 1040); // a chord
+        d.KeyUp(Vk.A, 1070);
+        Assert.False(d.KeyUp(vk, 1100));
     }
 
     [Fact]
-    public void A_plain_off_key_fires_on_its_key_down_and_ignores_auto_repeat()
+    public void AltGr_on_ABNT2_is_not_a_tap_of_Left_Ctrl()
     {
-        var off = new AirKeyDetector(AirKey.ScrollLock);
-        Assert.True(off.KeyDown(Vk.Scroll, 0));
-        Assert.False(off.KeyDown(Vk.Scroll, 500)); // auto-repeat
-        Assert.False(off.KeyUp(Vk.Scroll, 600));
-        Assert.True(off.KeyDown(Vk.Scroll, 1000));
+        // AltGr's fake Left Ctrl comes with Right Alt, so it is a chord.
+        var d = new AirKeyDetector(AirKey.LeftCtrlTap);
+        d.KeyDown(Vk.LControl, 0);
+        d.KeyDown(Vk.RMenu, 0);
+        Assert.False(d.KeyUp(Vk.RMenu, 80));
+        Assert.False(d.KeyUp(Vk.LControl, 80));
+    }
+
+    [Fact]
+    public void A_detector_for_a_shortcut_never_fires()
+    {
+        // Windows reports a shortcut (RegisterHotKey); the hook leaves it alone
+        var d = new AirKeyDetector(AirKey.Shortcut(KeyMods.Ctrl | KeyMods.Shift, Vk.Space));
+        Assert.False(d.IsKey(Vk.Space));
+        d.KeyDown(Vk.Space, 0);
+        Assert.False(d.Armed);
+        Assert.False(d.KeyUp(Vk.Space, 50));
     }
 
     [Fact]
@@ -178,10 +143,6 @@ public class AirKeyDetectorTests
         off.KeyDown(Vk.RShift, 1000); // alone: a tap
         Assert.True(off.KeyUp(Vk.RShift, 1100));
     }
-
-    [Fact]
-    public void Nothing_uses_Ctrl_Alt()
-        => Assert.DoesNotContain(AirKeys.All, k => AirKeys.Label(k).Contains("Alt", StringComparison.Ordinal));
 
     [Theory]
     [InlineData(Vk.A, false, true)]

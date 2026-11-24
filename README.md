@@ -133,8 +133,13 @@ repository's issue form with AIR's version and engine filled in; what you typed 
 The keys above are taken from the app you type in only while pick mode is on; the rest of the time AIR only listens.
 Right Ctrl keeps working as Ctrl in any combination (Ctrl+C, Ctrl+click): only a press and release with no other key
 counts as a tap. Right Shift too: a capital typed with it is not a tap. When AIR is off or asleep, the AIR key turns
-it back on. Both keys can be changed in the settings, and they are never the same key: giving one the other's key
-swaps them. Nothing uses Ctrl+Alt, which is AltGr on the ABNT2 keyboards many Brazilians use.
+it back on.
+
+Both keys can be changed in the settings: a tap of Right or Left Ctrl or Shift, or a shortcut you record, such as
+Ctrl+Shift+Space. A recorded shortcut is registered with Windows, so while AIR runs it belongs to AIR in every app.
+The recorder refuses a shortcut without Ctrl, Alt or Win (the key would type), Ctrl+Alt (AltGr on the ABNT2 keyboards
+many Brazilians use), the shortcuts every app counts on (Ctrl+C, V, X, Z, Y, A, S, Ctrl+Insert, Alt+F4, Alt+Space),
+and one another app already holds. The two keys are never the same: choosing for one the other's tap swaps them.
 
 **Applying** deletes your sentence from the end of the field and pastes the version, then puts back whatever was on your
 clipboard (text, images, files). Ctrl+Z in the app undoes it. If the field changed meanwhile (you typed after the
@@ -191,9 +196,10 @@ needs a step from you, such as the built-in model's download.
 
 - **General**
   - **AIR** on or off. Off, AIR stops reading what you type.
-  - **AIR key**: a tap of Right Ctrl (default) or of Right Shift, or Pause, Scroll Lock or Insert.
-  - **Off key**: puts AIR to sleep. A tap of Right Shift (default; Right Ctrl when Right Shift is the AIR key), or
-    any other key of the AIR key's list. Giving it the AIR key's key swaps the two.
+  - **AIR key**: a tap of Right Ctrl (default), Right Shift, Left Ctrl or Left Shift, or *Custom shortcut…*, which
+    records one: hold Ctrl, Alt or Win (and Shift, if you like) and press a key; Esc cancels.
+  - **Off key**: puts AIR to sleep. A tap of Right Shift (default; Right Ctrl when Right Shift is the AIR key), any
+    other tap, or a recorded shortcut. Giving it the AIR key's tap swaps the two.
 - **Tones**, as above.
 - **Bubble**
   - **Layout**: *Card* (the bar on top, as above) or *Compact* (a tighter list, the bar at the bottom). Clicking an

@@ -8,9 +8,13 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 - **The off key is a setting.** It was always a tap of Right Shift (Right Ctrl when Right Shift was the AIR key); now
-  it is any key of the AIR key's list, chosen on the General page next to the AIR key. The two are never the same:
-  giving one the other's key swaps them. A plain key (Pause, Scroll Lock, Insert) as the off key is taken from the app
-  you type in, as it is for the AIR key. A settings file from before keeps the off key it had.
+  it takes any of the AIR key's choices, on the General page next to the AIR key. The two are never the same: giving
+  one the other's tap swaps them. A settings file from before keeps the off key it had.
+- **More keys: Left Ctrl and Left Shift taps, and a shortcut you record**, for the AIR key and the off key. *Custom
+  shortcut…* records a chord such as Ctrl+Shift+Space and registers it with Windows, so it belongs to AIR in every app
+  while AIR runs. The recorder refuses a chord without Ctrl, Alt or Win, Ctrl+Alt (AltGr on ABNT2), the shortcuts
+  every app counts on (Ctrl+C, V, X, Z, Y, A, S, Ctrl+Insert, Alt+F4, Alt+Space) and one another app already holds.
+  If another app takes a recorded shortcut later, AIR uses a tap for that run and the tray says so.
 
 ### Changed
 - **The settings window has a menu.** On the left, General (AIR on or off, the AIR key and the off key), Tones,
@@ -20,6 +24,12 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **AIR is in the Microsoft Store** ([AI Inline Rewrite](https://apps.microsoft.com/detail/9pc04775lgm1)), from
   0.3.0: signed by Microsoft and kept up to date by the Store. The README puts it first, with its badge, and keeps the
   zip from Releases as the way without the Store; uninstalling covers both.
+
+### Removed
+- **Pause, Scroll Lock and Insert as AIR keys.** Each has a job of its own, and AIR took the key whole: with Insert as
+  the AIR key, Shift+Insert and Ctrl+Insert stopped pasting and copying in every app. A settings file with one of them
+  falls back to a tap (Right Ctrl for the AIR key, Right Shift for the off key). Any of them can still end a recorded
+  shortcut, such as Ctrl+Shift+Insert.
 
 ## [0.3.0] - 2026-11-23
 

@@ -45,10 +45,14 @@ public sealed class AppController : ISettingsHost, IDisposable
     private readonly Dispatcher _ui = Dispatcher.CurrentDispatcher;
 
     private IRewriteEngine _rewriter;
-    private AirKeyDetector _air;
 
-    // The off key (Settings.OffKey): the same rules as the AIR key, so a tap of Shift still types capitals.
+    // The keys in force (ApplyKeys): a tap goes to its detector, which the hook feeds; a shortcut goes to Windows
+    // (_shortcuts), and its detector never fires. The off key follows the same rules, so a Shift still types capitals.
+    private const int AirShortcutId = 1, OffShortcutId = 2;
+    private AirKeyDetector _air;
     private AirKeyDetector _off;
+    private GlobalHotKeys? _shortcuts;
+    private bool _keysPaused;
     private BubbleWindow _bubble = null!;
     private SettingsWindow? _settingsWindow;
     private WinForms.NotifyIcon _tray = null!;
@@ -144,7 +148,15 @@ public sealed class AppController : ISettingsHost, IDisposable
         }
 
         BuildTray();
-        Log.Write($"start: version {Version}, engine {_rewriter.Kind}, model {_rewriter.Model}, AIR key {_settings.AirKey}, on {_settings.On}");
+        _shortcuts = new GlobalHotKeys();
+        _shortcuts.Pressed += id =>
+        {
+            if (_keysPaused) return;
+            if (id == AirShortcutId) OnAirKey();
+            else if (id == OffShortcutId) OnOffKey();
+        };
+        ApplyKeys();
+        Log.Write($"start: version {Version}, engine {_rewriter.Kind}, model {_rewriter.Model}, AIR key {_air.Key}, off key {_off.Key}, on {_settings.On}");
         if (_settings.On) Render();
         _ = CheckEngineAsync();
     }
@@ -198,7 +210,7 @@ public sealed class AppController : ISettingsHost, IDisposable
             _tray.BalloonTipTitle = "AI Inline Rewrite is on";
             _tray.BalloonTipText = _rewriter is Local.BuiltInEngine { ModelPath: null }
                 ? $"First, AIR needs its model on this PC: download it once in the settings ({LocalModel.DownloadSizeText})."
-                : $"Type in any app. At a pause, AIR writes the versions; {AirKeys.Label(_settings.AirKey).ToLowerInvariant()} to pick one. Click this icon for the settings.";
+                : $"Type in any app. At a pause, AIR writes the versions; {AirKeys.Phrase(_settings.AirKey)} to pick one. Click this icon for the settings.";
             _tray.ShowBalloonTip(8000);
         }
     }
@@ -244,31 +256,16 @@ public sealed class AppController : ISettingsHost, IDisposable
     private bool OnKey(KeyEvent e)
     {
         if (e.Own || (e.Injected && !_acceptInjected)) return false; // AIR's own paste, or another program's keystrokes
+        if (_keysPaused) return false; // a shortcut is being recorded in the settings
         if (e.Down)
         {
-            // both detectors see every key-down, so each knows when the other's key is held
-            bool offFired = _off.KeyDown(e.Vk, e.TimeMs);
-            bool airFired = _air.KeyDown(e.Vk, e.TimeMs);
-            if (offFired)
-            {
-                Post(OnOffKey);
-                return true; // a plain off key belongs to AIR
-            }
-            if (_off.IsAirKey(e.Vk))
-            {
-                if (!_off.IsTap) return true;
-                if (_off.Armed) Post(_mouse.Install);
-            }
-            if (airFired)
-            {
-                Post(OnAirKey);
-                return true; // a plain AIR key belongs to AIR
-            }
-            if (_air.IsAirKey(e.Vk))
-            {
-                if (!_air.IsTap) return true;
-                if (_air.Armed) Post(_mouse.Install);
-            }
+            // both detectors see every key-down, so each knows when another key is held
+            _off.KeyDown(e.Vk, e.TimeMs);
+            _air.KeyDown(e.Vk, e.TimeMs);
+            if ((_off.IsKey(e.Vk) && _off.Armed) || (_air.IsKey(e.Vk) && _air.Armed)) Post(_mouse.Install);
+            // AIR's own shortcut: Windows reports it and keeps it from the app, and pick mode must not take it for
+            // another key (it would close, then open again)
+            if (_shortcuts is not null && _shortcuts.Holds(e.Vk, HeldMods())) return false;
             bool chord = ChordHeld();
             if (_pick.Active)
             {
@@ -309,22 +306,24 @@ public sealed class AppController : ISettingsHost, IDisposable
             });
             return false; // its key-up still reaches the app
         }
-        if (_off.IsAirKey(e.Vk))
-        {
-            if (!_off.IsTap) return true;
-            Post(_mouse.Uninstall);
-        }
-        if (_air.IsAirKey(e.Vk))
-        {
-            if (!_air.IsTap) return true;
-            Post(_mouse.Uninstall);
-        }
+        if (_off.IsKey(e.Vk) || _air.IsKey(e.Vk)) Post(_mouse.Uninstall);
         return _swallowed.Remove(e.Vk);
     }
 
     private static bool ChordHeld() =>
         NativeMethods.GetAsyncKeyState(Vk.Control) < 0 || NativeMethods.GetAsyncKeyState(Vk.Menu) < 0
         || NativeMethods.GetAsyncKeyState(Vk.LWin) < 0 || NativeMethods.GetAsyncKeyState(Vk.RWin) < 0;
+
+    private static KeyMods HeldMods()
+    {
+        static bool Held(int vk) => NativeMethods.GetAsyncKeyState(vk) < 0;
+        var mods = KeyMods.None;
+        if (Held(Vk.Control)) mods |= KeyMods.Ctrl;
+        if (Held(Vk.Menu)) mods |= KeyMods.Alt;
+        if (Held(Vk.Shift)) mods |= KeyMods.Shift;
+        if (Held(Vk.LWin) || Held(Vk.RWin)) mods |= KeyMods.Win;
+        return mods;
+    }
 
     private void Post(Action action) => _ui.BeginInvoke(action);
 
@@ -895,11 +894,52 @@ public sealed class AppController : ISettingsHost, IDisposable
     private void SetKeys((AirKey Air, AirKey Off) keys)
     {
         (_settings.AirKey, _settings.OffKey) = keys;
-        _air = new AirKeyDetector(keys.Air);
-        _off = new AirKeyDetector(keys.Off);
-        _mouse.Uninstall();
+        if (!_keysPaused) ApplyKeys();
         Log.Write($"AIR key: {keys.Air}, off key: {keys.Off}");
         SaveSoon();
+    }
+
+    /// <summary>While a shortcut is being recorded, AIR's keys do nothing and its shortcuts are let go.</summary>
+    public void PauseKeys(bool paused)
+    {
+        if (_keysPaused == paused) return;
+        _keysPaused = paused;
+        if (paused)
+        {
+            _shortcuts?.UnregisterAll();
+            _mouse.Uninstall();
+        }
+        else
+        {
+            ApplyKeys();
+        }
+    }
+
+    public string? ShortcutProblem(AirKey key) =>
+        AirKeys.Problem(key) ?? (_shortcuts is null || key.IsTap || _shortcuts.IsFree(key) ? null : $"{AirKeys.Label(key)} is taken by another app: record another.");
+
+    // Puts the keys of the settings in force. A shortcut another app took since it was chosen gives way, for this run
+    // only, to a tap (the file keeps the choice, tried again at the next start), and the tray says so.
+    private void ApplyKeys()
+    {
+        _shortcuts?.UnregisterAll();
+        var air = Claim(AirShortcutId, _settings.AirKey, AirKeys.Taps.First(t => t != _settings.OffKey));
+        var off = Claim(OffShortcutId, _settings.OffKey, AirKeys.DefaultOffKey(air));
+        if (off == air) off = AirKeys.DefaultOffKey(air);
+        _air = new AirKeyDetector(air);
+        _off = new AirKeyDetector(off);
+        _mouse.Uninstall();
+    }
+
+    private AirKey Claim(int id, AirKey key, AirKey fallback)
+    {
+        if (key.IsTap || _shortcuts is null || _shortcuts.Register(id, key)) return key;
+        string which = id == AirShortcutId ? "AIR key" : "off key";
+        Log.Write($"{which} {key} taken by another app: {fallback} for now");
+        _tray.BalloonTipTitle = "A shortcut of AIR is taken";
+        _tray.BalloonTipText = $"Another app holds {AirKeys.Label(key)}, so the {which} is {AirKeys.Label(fallback)} for now. Record another shortcut in the settings.";
+        _tray.ShowBalloonTip(8000);
+        return fallback;
     }
 
     public void SetFollow(bool on) => SetFollow(on, "settings");
@@ -980,6 +1020,7 @@ public sealed class AppController : ISettingsHost, IDisposable
         _download?.Cancel();
         _hook.Dispose();
         _mouse.Dispose();
+        _shortcuts?.Dispose();
         _windowsTheme.Dispose();
         if (_tray is not null)
         {

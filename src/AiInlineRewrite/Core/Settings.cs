@@ -65,6 +65,7 @@ public sealed class Settings
 
     public AppTheme Theme { get; set; } = AppTheme.Windows;
 
+    /// <summary>Opens pick mode, and wakes AIR when it is off: a tap, or a recorded shortcut.</summary>
     public AirKey AirKey { get; set; } = AirKey.RightCtrlTap;
 
     /// <summary>
@@ -117,8 +118,9 @@ public sealed class Settings
 
     /// <summary>
     /// Repairs what a hand edit may have left: every tone exactly once (a missing one is added off, at the end), at
-    /// least one tone on, a known engine, layout, theme and keys (the off key not the AIR key), a sane pause, and the
-    /// defaults for empty strings.
+    /// least one tone on, a known engine, layout and theme, keys that can be used (a key that cannot, such as the
+    /// Pause, Scroll Lock and Insert of older files, falls back to a default tap; the off key is never the AIR key),
+    /// a sane pause, and the defaults for empty strings.
     /// </summary>
     public Settings Normalize()
     {
@@ -137,8 +139,10 @@ public sealed class Settings
 
         if (!Enum.IsDefined(Layout)) Layout = BubbleLayout.Card;
         if (!Enum.IsDefined(Theme)) Theme = AppTheme.Windows;
-        if (!Enum.IsDefined(AirKey)) AirKey = AirKey.RightCtrlTap;
-        if (!Enum.IsDefined(OffKey) || OffKey == AirKey) OffKey = AirKeys.DefaultOffKey(AirKey);
+        bool offUsable = OffKey is not null && AirKeys.Problem(OffKey) is null;
+        if (AirKey is null || AirKeys.Problem(AirKey) is not null)
+            AirKey = AirKeys.Taps.First(t => !offUsable || t != OffKey);
+        if (!offUsable || OffKey == AirKey) OffKey = AirKeys.DefaultOffKey(AirKey);
         if (!Enum.IsDefined(Engine)) Engine = EngineKind.BuiltIn;
         OllamaModel = Trimmed(OllamaModel, DefaultOllamaModel);
         OllamaEndpoint = Trimmed(OllamaEndpoint, DefaultOllamaEndpoint);

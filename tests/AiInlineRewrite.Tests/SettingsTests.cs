@@ -103,8 +103,8 @@ public sealed class SettingsTests : IDisposable
             On = false,
             Layout = BubbleLayout.Compact,
             Theme = AppTheme.Dark,
-            AirKey = AirKey.Pause,
-            OffKey = AirKey.Insert,
+            AirKey = AirKey.Shortcut(KeyMods.Ctrl | KeyMods.Shift, Vk.Space),
+            OffKey = AirKey.LeftShiftTap,
             FollowCaret = false,
             BubbleLeft = 10,
             BubbleTop = 20,
@@ -133,6 +133,8 @@ public sealed class SettingsTests : IDisposable
         Assert.Equal([Tone.Diplomatic, Tone.Casual, Tone.Ornate, Tone.Trendy], back.EnabledTones());
         string file = File.ReadAllText(Path.Combine(_dir, SettingsStore.FileName));
         Assert.Contains("\"Compact\"", file); // enums as names
+        Assert.Contains("\"Ctrl+Shift+Space\"", file); // keys too
+        Assert.Contains("\"LeftShiftTap\"", file);
         Assert.Contains("\"Claude\"", file);
         Assert.False(File.Exists(Path.Combine(_dir, SettingsStore.FileName + ".tmp"))); // the temp file was moved into place
     }
@@ -163,7 +165,7 @@ public sealed class SettingsTests : IDisposable
     [Fact]
     public void Normalize_replaces_values_outside_the_enums()
     {
-        var s = new Settings { Layout = (BubbleLayout)9, Theme = (AppTheme)9, AirKey = (AirKey)9, OffKey = (AirKey)9, Engine = (EngineKind)9 }.Normalize();
+        var s = new Settings { Layout = (BubbleLayout)9, Theme = (AppTheme)9, AirKey = null!, OffKey = AirKey.Shortcut(KeyMods.Ctrl, 'C'), Engine = (EngineKind)9 }.Normalize();
         Assert.Equal(BubbleLayout.Card, s.Layout);
         Assert.Equal(AppTheme.Windows, s.Theme);
         Assert.Equal(AirKey.RightCtrlTap, s.AirKey);
@@ -172,16 +174,20 @@ public sealed class SettingsTests : IDisposable
     }
 
     [Theory]
-    [InlineData("""{ "AirKey": "RightCtrlTap" }""", AirKey.RightShiftTap)] // from before the off key was a setting:
-    [InlineData("""{ "AirKey": "Pause" }""", AirKey.RightShiftTap)]        // it keeps the key it had
-    [InlineData("""{ "AirKey": "RightShiftTap" }""", AirKey.RightCtrlTap)]
-    [InlineData("""{ "AirKey": "Pause", "OffKey": "Insert" }""", AirKey.Insert)]
-    [InlineData("""{ "AirKey": "Insert", "OffKey": "Insert" }""", AirKey.RightShiftTap)] // hand-edited onto the AIR key
-    public void The_off_key_is_kept_and_never_the_AIR_key(string json, AirKey expected)
+    [InlineData("""{ "AirKey": "RightCtrlTap" }""", "RightCtrlTap", "RightShiftTap")] // from before the off key was a
+    [InlineData("""{ "AirKey": "RightShiftTap" }""", "RightShiftTap", "RightCtrlTap")] // setting: the key it had
+    [InlineData("""{ "AirKey": "Ctrl+Shift+Space", "OffKey": "LeftShiftTap" }""", "Ctrl+Shift+Space", "LeftShiftTap")]
+    [InlineData("""{ "AirKey": "Pause" }""", "RightCtrlTap", "RightShiftTap")]          // the plain keys of older versions
+    [InlineData("""{ "AirKey": "Insert", "OffKey": "ScrollLock" }""", "RightCtrlTap", "RightShiftTap")]
+    [InlineData("""{ "AirKey": "Pause", "OffKey": "RightCtrlTap" }""", "RightShiftTap", "RightCtrlTap")] // a tap the off key leaves free
+    [InlineData("""{ "AirKey": "Ctrl+C" }""", "RightCtrlTap", "RightShiftTap")]         // refused, written by hand
+    [InlineData("""{ "AirKey": 3 }""", "RightCtrlTap", "RightShiftTap")]                // not a name
+    [InlineData("""{ "AirKey": "LeftCtrlTap", "OffKey": "LeftCtrlTap" }""", "LeftCtrlTap", "RightShiftTap")] // the off key on the AIR key
+    public void Keys_load_by_name_and_a_key_that_cannot_be_used_falls_back_to_a_tap(string json, string air, string off)
     {
         var s = SettingsStore.Parse(json);
-        Assert.Equal(expected, s.OffKey);
-        Assert.NotEqual(s.AirKey, s.OffKey);
+        Assert.Equal(air, AirKeys.Name(s.AirKey));
+        Assert.Equal(off, AirKeys.Name(s.OffKey));
     }
 
     [Theory]
