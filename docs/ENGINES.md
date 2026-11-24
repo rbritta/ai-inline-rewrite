@@ -81,10 +81,11 @@ When it ends, AIR is ready with no restart.
 
 AIR runs llama.cpp through [LLamaSharp](https://github.com/SciSharp/LLamaSharp) 0.30.0 (MIT), with two native builds
 next to the exe: Vulkan, for a GPU with a Vulkan driver (NVIDIA, AMD, Intel), and the CPU. It loads the model as soon
-as it finds it (when AIR starts, when the engine is picked, when the download ends): all layers on the GPU, else 16 of
-them, else none (the CPU alone). On the reference machine loading took
-about 2 s, with all 29 layers on the GPU. After 30 minutes without a rewrite, AIR frees the model and its memory; the
-next pause loads it again.
+as it finds it while AIR is on (when AIR starts or wakes, when the engine is picked, when the download ends): all layers
+on the GPU, else 16 of them, else none (the CPU alone). On the reference machine loading took
+about 2 s, with all 29 layers on the GPU. AIR frees the model and its memory when it goes to sleep (the off key, the
+switch in the settings, the tray) or quits, and after 30 minutes without a rewrite; waking AIR, or the next pause,
+loads it again.
 
 When the model cannot run (not enough memory, most likely), the bubble says "The model could not run" and asks to
 close programs that use a lot of memory. The diagnostic log (`DiagnosticLog`) records the device llama.cpp picked and
@@ -183,19 +184,22 @@ Sitting there, the loaded model held memory and drew about 1 W more: 20 seconds 
 
 **How long it stays loaded.** Ollama's own default is 5 minutes after the last request (`OLLAMA_KEEP_ALIVE` changes
 that default). AIR asks for 30 minutes on every request (`keep_alive: "30m"`, `OllamaClient.KeepAlive`), which
-overrides that default, and loads the model once when it starts, so the first version is quick. So the model is
-loaded from the moment AIR starts, while you type, and until 30 minutes after your last pause.
+overrides that default, and loads the model once when it starts or wakes, so the first version is quick. So the model
+is loaded while AIR is on, from the moment it starts and until 30 minutes after your last pause.
 
-**Freeing it.**
+**Freeing it.** Putting AIR to sleep (the off key, the switch in the settings, the tray) or quitting it frees the
+model at once: AIR asks Ollama to unload it (`keep_alive: 0`, `OllamaClient.ReleaseAsync`), and waking AIR loads it
+again. That unloads `qwen2.5:7b` for anything else using it too; its next request loads it back. On the reference
+machine, freeing it took about 2 s and loading it again 3.4 s. By hand:
 
 ```powershell
 ollama ps                  # what is loaded, and until when
 ollama stop qwen2.5:7b     # unload it now
 ```
 
-Quit AIR first, or turn it off in the tray: otherwise the next pause loads the model again (2.0 to 2.5 s on the
-reference machine's GPU). Quitting Ollama from its tray icon frees everything. A shorter time needs
-`OllamaClient.KeepAlive` changed and a rebuild; a setting for it is on the [roadmap](../TODO.md).
+While AIR is on, the next pause loads the model again (2.0 to 2.5 s on the reference machine's GPU). Quitting Ollama
+from its tray icon frees everything. A shorter time while AIR is on needs `OllamaClient.KeepAlive` changed and a
+rebuild; a setting for it is on the [roadmap](../TODO.md).
 
 Only the reference machine's 12 GB GPU was measured; how other cards fit the model was not tested
 ([TODO](../TODO.md#not-validated-yet)).

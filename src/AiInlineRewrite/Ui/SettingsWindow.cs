@@ -559,7 +559,7 @@ public sealed class SettingsWindow : Window
     {
         _onToggle = new Toggle(p, _host.Settings.On, "AIR on or off");
         _onToggle.Changed += on => _host.SetOn(on);
-        return Section(p, first, Line(p, "AIR", "Off: AIR stops reading what you type. The AIR key turns it back on.", _onToggle));
+        return Section(p, first, Line(p, "AIR", "Off: AIR stops reading and frees the model's memory. The AIR key turns it back on.", _onToggle));
     }
 
     private FrameworkElement FollowSection(Palette p)
@@ -587,7 +587,7 @@ public sealed class SettingsWindow : Window
         var s = _host.Settings;
         var stack = new StackPanel();
         stack.Children.Add(KeySection(p, "air", "AIR key", "Opens pick mode: then ↑ ↓ and Enter, a number, or Esc. A tap is a press and release with no other key.", s.AirKey, focus));
-        stack.Children.Add(KeySection(p, "off", "Off key", "Puts AIR to sleep: the bubble closes and AIR stops reading until the AIR key wakes it. Picking the AIR key's tap swaps them.", s.OffKey, focus));
+        stack.Children.Add(KeySection(p, "off", "Off key", "Puts AIR to sleep and frees the model's memory until the AIR key wakes it. Picking the AIR key's tap swaps them.", s.OffKey, focus));
         _keysBody.Child = stack;
     }
 

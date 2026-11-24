@@ -34,10 +34,11 @@ dotnet test tests\AiInlineRewrite.Tests
   come from it.
 - The smoke test drives the real app on the real desktop: `python tools\smoke\smoke_test.py <exe> <folder>` types
   the samples into a text box of its own, then checks the AIR key, pick mode (arrows, Enter, a number, Esc, another
-  key, a chord, the 4 s close), Ctrl+Z, the drag and the follow arrow, the settings, and the engine picker
-  (switched to Claude, the settings and the bubble show the no-key state at once; back on Ollama, a fresh sample is
-  corrected), 23 checks in all, and saves screenshots. The engine picker checks need Ollama as the engine and no
-  Anthropic credential on the PC; otherwise they print SKIP and the run has 18. It takes over the keyboard and mouse
+  key, a chord, the 4 s close), Ctrl+Z, the off key (asleep, Ollama no longer holds the model; the AIR key loads it
+  again), the drag and the follow arrow, the settings, and the engine picker (switched to Claude, the settings and the
+  bubble show the no-key state at once; back on Ollama, a fresh sample is corrected), 30 checks in all, and saves
+  screenshots. The engine picker checks need Ollama as the engine and no Anthropic credential on the PC, and the two
+  model memory checks need Ollama as the engine; otherwise they print SKIP. It takes over the keyboard and mouse
   for about 3 minutes, so run it on an unlocked desktop nobody is using; it stops if the focus leaves its windows or
   another window covers the point it is about to click, and puts your AIR settings back at the end. Anything else
   that breaks the run ends it as one FAIL naming the last check that passed, with the traceback in `error.txt` in the

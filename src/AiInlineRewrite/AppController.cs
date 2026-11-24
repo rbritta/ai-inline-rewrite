@@ -576,7 +576,8 @@ public sealed class AppController : ISettingsHost, IDisposable
         if (!ReferenceEquals(engine, _rewriter)) return; // switched meanwhile: the new engine's own check reports
         _engine = state;
         Log.Write($"engine {engine.Kind}: {_engine}");
-        if (_engine == EngineState.Ready) _ = Task.Run(() => engine.PreloadAsync(CancellationToken.None));
+        // asleep, AIR leaves the model out of memory until the AIR key wakes it (SetOn)
+        if (_engine == EngineState.Ready && _settings.On) _ = Task.Run(() => engine.PreloadAsync(CancellationToken.None));
         else if (_mode == Mode.Idle) _mode = Mode.Error;
         Render();
         _settingsWindow?.SyncEngine();
@@ -825,6 +826,8 @@ public sealed class AppController : ISettingsHost, IDisposable
         _settingsWindow.Activate();
     }
 
+    // Off (the off key, the AIR key's switch, the tray) frees the model's memory, so a game gets the video memory back;
+    // on again checks the engine and loads the model, so the first version does not wait for it.
     public void SetOn(bool on)
     {
         if (_settings.On == on) return;
@@ -837,16 +840,29 @@ public sealed class AppController : ISettingsHost, IDisposable
             _pickTimer.Stop();
             _rows = [];
             _mode = Mode.Idle;
+            ReleaseModel("AIR off");
         }
         else
         {
             _lastProcessed = "";
+            _ = CheckEngineAsync();
         }
         Log.Write("AIR " + (on ? "on" : "off"));
         PaintTray();
         Render();
         _settingsWindow?.Sync();
         SaveSoon();
+    }
+
+    private void ReleaseModel(string why)
+    {
+        var engine = _rewriter;
+        _ = Task.Run(async () =>
+        {
+            var watch = Stopwatch.StartNew();
+            await engine.ReleaseAsync(CancellationToken.None);
+            Log.Write($"engine {engine.Kind}: model released ({why}) in {watch.Elapsed.TotalSeconds:0.0} s");
+        });
     }
 
     public void SetToneOn(Tone tone, bool on)
@@ -1018,6 +1034,9 @@ public sealed class AppController : ISettingsHost, IDisposable
         if (_saveTimer.IsEnabled) SaveNow();
         _cts?.Cancel();
         _download?.Cancel();
+        // quitting frees the model too: Ollama would keep it for half an hour; a short wait, so Exit never hangs
+        var engine = _rewriter;
+        Task.Run(() => engine.ReleaseAsync(CancellationToken.None)).Wait(TimeSpan.FromSeconds(2));
         _hook.Dispose();
         _mouse.Dispose();
         _shortcuts?.Dispose();

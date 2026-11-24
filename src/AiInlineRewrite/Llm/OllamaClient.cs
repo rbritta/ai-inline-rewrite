@@ -15,7 +15,8 @@ public sealed class OllamaClient : IRewriteEngine
 {
     /// <summary>
     /// How long Ollama keeps the model in memory after the last request (its own default is 5 minutes). Every request
-    /// renews it, so the model stays loaded while you write and frees its memory half an hour after the last pause.
+    /// renews it, so the model stays loaded while you write and frees its memory half an hour after the last pause, or
+    /// at once when AIR goes to sleep or quits (<see cref="ReleaseAsync"/>).
     /// </summary>
     public const string KeepAlive = "30m";
 
@@ -166,6 +167,24 @@ public sealed class OllamaClient : IRewriteEngine
         catch (Exception e) when (e is EngineException or OperationCanceledException)
         {
             // the server may still be starting; the first rewrite reports the real state
+        }
+    }
+
+    /// <summary>
+    /// Asks Ollama to unload the model now (no prompt, keep_alive 0) instead of half an hour after the last request.
+    /// Never throws: an Ollama that is down holds nothing.
+    /// </summary>
+    public async Task ReleaseAsync(CancellationToken ct)
+    {
+        var body = new { model = Model, keep_alive = 0 };
+        try
+        {
+            using var content = new StringContent(JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+            using var resp = await _http.PostAsync(_endpoint + "/api/generate", content, ct);
+        }
+        catch (Exception e) when (e is HttpRequestException or IOException or OperationCanceledException)
+        {
+            // nothing to free, or no time left to ask (AIR is quitting)
         }
     }
 

@@ -157,6 +157,14 @@ public class ClaudeClientTests
     }
 
     [Fact]
+    public async Task Release_sends_nothing()
+    {
+        var http = FakeHttp.Unreachable();
+        await Client(http).ReleaseAsync(CancellationToken.None);
+        Assert.Empty(http.Requests);
+    }
+
+    [Fact]
     public void Claude_in_the_settings_creates_only_the_Claude_engine()
     {
         var claude = RewriteEngines.Create(new Settings { Engine = EngineKind.Claude, ClaudeModel = "claude-sonnet-5-5" });

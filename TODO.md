@@ -39,8 +39,8 @@ state it as fact.
 Roughly in the order it would be picked up. Nothing here is promised; an issue moves an item up.
 
 - Code-signed releases, so Windows names the publisher instead of an unknown one.
-- A setting for how long Ollama keeps the model loaded (AIR asks for 30 minutes), and unloading it when AIR is
-  turned off or quits.
+- A setting for how long the model stays loaded after the last version while AIR is on (AIR asks for 30 minutes;
+  asleep or quitting, it frees the model at once).
 - A smaller default model for PCs without a GPU, chosen with `tools/ToneCheck` on a CPU, and the first-run hint
   pointing to it.
 - Thinking models in Ollama (`gemma4:12b`, `qwen3-vl:8b`): they spend the 256 tokens AIR allows per answer on

@@ -46,7 +46,9 @@ sentence you are typing and writes it again in English, once per tone:
 Then tap the **AIR key** (Right Ctrl, alone) and pick a version: it replaces your sentence in place. Or ignore it
 and keep typing: the versions clear, and new ones come at the next pause. The bubble stays by your text while AIR is
 on; when you want it gone, tap **Right Shift** alone (the off key) to put AIR to sleep (or turn it off in the
-settings or the tray menu), and the AIR key brings it back.
+settings or the tray menu), and the AIR key brings it back. Asleep, AIR also frees the model's memory (video memory,
+on a graphics card), so a game or another app gets it back; the AIR key loads the model again, a few seconds before
+the first version. Quitting AIR frees it too.
 
 ## Engines
 
@@ -119,7 +121,7 @@ repository's issue form with AIR's version and engine filled in; what you typed 
 | **Enter** | applies the selected version |
 | **1** to **7** | applies that version directly |
 | **Esc** | clears the versions |
-| Tap **Right Shift** alone (the off key) | AIR sleeps: the bubble closes and nothing is written until you tap the AIR key |
+| Tap **Right Shift** alone (the off key) | AIR sleeps: the bubble closes, the model's memory is freed, and nothing is written until you tap the AIR key, which loads the model again |
 | Any other key, or 4 s without a key | leaves pick mode, and the key types as usual |
 | Click a version | applies it |
 | Drag the bubble by its bar | leaves it there (see *Follow the text cursor*) |
@@ -195,7 +197,8 @@ needs a step from you, such as the built-in model's download.
 </div>
 
 - **General**
-  - **AIR** on or off. Off, AIR stops reading what you type.
+  - **AIR** on or off. Off, AIR stops reading what you type and frees the model's memory; on, it loads the model
+    again.
   - **AIR key**: a tap of Right Ctrl (default), Right Shift, Left Ctrl or Left Shift, or *Custom shortcut…*, which
     records one: hold Ctrl, Alt or Win (and Shift, if you like) and press a key; Esc cancels.
   - **Off key**: puts AIR to sleep. A tap of Right Shift (default; Right Ctrl when Right Shift is the AIR key), any

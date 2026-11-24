@@ -18,7 +18,10 @@ namespace AiInlineRewrite.Local;
 /// </summary>
 public sealed class BuiltInEngine : IRewriteEngine
 {
-    /// <summary>How long the model stays in memory after the last version, as with Ollama (<see cref="OllamaClient.KeepAlive"/>).</summary>
+    /// <summary>
+    /// How long the model stays in memory after the last version, as with Ollama (<see cref="OllamaClient.KeepAlive"/>);
+    /// AIR asleep or quitting frees it at once (<see cref="ReleaseAsync"/>).
+    /// </summary>
     public static readonly TimeSpan KeepLoaded = TimeSpan.FromMinutes(30);
 
     private const int MaxTokens = 256;
@@ -69,6 +72,21 @@ public sealed class BuiltInEngine : IRewriteEngine
         {
             // the first real version reports the state
         }
+    }
+
+    /// <summary>Drops the model from memory now, once a version being written lets go of it. Never throws.</summary>
+    public async Task ReleaseAsync(CancellationToken ct)
+    {
+        try
+        {
+            await Gate.WaitAsync(ct);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        try { Unload(); }
+        finally { Gate.Release(); }
     }
 
     /// <summary>As with Ollama: a version that left English is asked for once more, saying so.</summary>

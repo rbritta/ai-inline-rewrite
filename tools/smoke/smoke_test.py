@@ -12,7 +12,8 @@ at the end.
 
 Needs Python 3 with Pillow, and the engine in the settings ready (Ollama with the model, or an Anthropic key).
 The engine picker checks switch to Claude and expect its no-key state, so they run only when the engine is Ollama
-and this PC has no Anthropic credential; otherwise they print SKIP.
+and this PC has no Anthropic credential; otherwise they print SKIP. With Ollama as the engine it also checks, through
+Ollama's /api/ps, that AIR asleep frees the model and that waking it loads the model again.
 """
 import ctypes
 import ctypes.wintypes as W
@@ -23,6 +24,7 @@ import subprocess
 import sys
 import time
 import traceback
+import urllib.request
 
 from PIL import ImageGrab
 
@@ -107,6 +109,26 @@ def anthropic_credential():
         return True
     config = os.environ.get('ANTHROPIC_CONFIG_DIR') or os.path.join(os.environ['APPDATA'], 'Anthropic')
     return os.path.isdir(os.path.join(config, 'configs')) or os.path.exists(os.path.join(config, 'active_config'))
+
+
+def ollama_engine():
+    """(endpoint, model) when the settings run Ollama, else None: the checks that AIR asleep frees the model ask
+    Ollama what it holds (/api/ps)."""
+    try:
+        with open(SETTINGS, encoding='utf-8-sig') as f:
+            s = json.load(f)
+    except (OSError, ValueError):
+        return None
+    if s.get('Engine') != 'Ollama':
+        return None
+    return (s.get('OllamaEndpoint') or 'http://localhost:11434').rstrip('/'), s.get('OllamaModel') or 'qwen2.5:7b'
+
+
+def ollama_holds(engine):
+    """Is the model loaded in Ollama now?"""
+    endpoint, model = engine
+    with urllib.request.urlopen(endpoint + '/api/ps', timeout=5) as r:
+        return any(m.get('name') == model or m.get('model') == model for m in json.load(r).get('models', []))
 
 
 def shot(name, box=None):
@@ -301,11 +323,18 @@ def run(air_pid, tgt_pid, pids):
     guard(pids); wi.press('rshift')
     check('a tap of Right Shift puts AIR to sleep and hides the bubble',
           within(3, lambda: not wi.user32.IsWindowVisible(bub)))
+    ollama = ollama_engine()
+    if ollama:
+        check('AIR asleep frees the model: Ollama no longer holds it', within(10, lambda: not ollama_holds(ollama)))
+    else:
+        print('SKIP model freed while asleep: it is read from Ollama, and the engine is not Ollama', flush=True)
     type_here(' ok')
     time.sleep(2)  # nothing to wait for: the check is that no bubble comes back while AIR sleeps
     check('typing while AIR sleeps shows nothing', not wi.user32.IsWindowVisible(bub))
     guard(pids); wi.press('rctrl')
     check('the AIR key wakes AIR and the bubble is back', within(3, lambda: wi.user32.IsWindowVisible(bub)), status())
+    if ollama:
+        check('waking AIR loads the model again', within(20, lambda: ollama_holds(ollama)))
 
     # drag the bubble: follow turns off; the arrow turns it back on
     air_label = find(ui(), lambda e: e['type'] == 'Text' and e['name'] == 'AIR', 'the AIR label of the bubble')

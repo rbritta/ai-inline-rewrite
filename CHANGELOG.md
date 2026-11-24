@@ -6,6 +6,16 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-24
+
+### Changed
+- **AIR asleep frees the model's memory.** Putting AIR to sleep (the off key, the switch in the settings, or the
+  tray) or quitting it frees the model at once, with the built-in engine and with Ollama, so a game or another app
+  gets the video memory back (4.4 GiB on the reference machine). Waking it with the AIR key or the switch loads the
+  model again, a few seconds before the first version. It used to stay loaded up to 30 minutes after the last
+  version, asleep or not. With Ollama, AIR asks it to unload `qwen2.5:7b`, which frees it for anything else using
+  that model too; its next request loads it back. AIR started asleep no longer loads the model.
+
 ## [0.4.0] - 2026-11-24
 
 ### Added
@@ -137,7 +147,8 @@ The first public version.
 - A self-contained single-file exe for Windows x64, built and released by CI on a `vX.Y.Z` tag, with the zip's
   SHA-256 checksum and a build provenance attestation to verify it (SECURITY.md).
 
-[Unreleased]: https://github.com/rbritta/ai-inline-rewrite/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/rbritta/ai-inline-rewrite/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.4.1
 [0.4.0]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.4.0
 [0.3.0]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.3.0
 [0.2.1]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.2.1

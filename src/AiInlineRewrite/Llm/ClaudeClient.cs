@@ -112,6 +112,9 @@ public sealed class ClaudeClient : IRewriteEngine
     /// <summary>Nothing to load: the model runs at Anthropic.</summary>
     public Task PreloadAsync(CancellationToken ct) => Task.CompletedTask;
 
+    /// <summary>Nothing to free either: no model in this PC's memory.</summary>
+    public Task ReleaseAsync(CancellationToken ct) => Task.CompletedTask;
+
     // What an SDK or network failure means for the bubble; null for what is not an engine failure (cancellation).
     private EngineException? Translate(Exception e) => e switch
     {

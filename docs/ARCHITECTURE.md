@@ -50,7 +50,8 @@ keyboard hook ──> AppController ──(pause)──> FocusedText (UI Automat
 `AppController` talks to one `IRewriteEngine` (`Llm/IRewriteEngine.cs`), created by `RewriteEngines.Create` from
 `Settings.Engine`; only that engine exists in the process, so with Claude nothing ever reaches Ollama and the other way
 round. The built-in engine lives in the app (`Local/`), so the factory gets it through `RewriteEngines.BuiltIn`. An engine streams a version (`RewriteAsync`), says whether it can write now without spending tokens
-(`CheckAsync`, when it is created) and gets ready (`PreloadAsync`). A new engine or model from the settings window
+(`CheckAsync`, when it is created and when AIR wakes), gets ready (`PreloadAsync`, only while AIR is on) and frees the
+model's memory (`ReleaseAsync`, when AIR goes to sleep, from `AppController.SetOn`, or quits). A new engine or model from the settings window
 takes effect at once (`AppController.SwitchEngine`): the versions in flight are cancelled, the cached ones dropped,
 the new engine created and checked; a check that finishes after another switch is ignored. A failure the user can fix is an `EngineException` with an
 `EngineState`; `EngineStatus` turns it into the status line and the one-step hint, per engine.
@@ -58,12 +59,14 @@ the new engine created and checked; a check that finishes after another switch i
 - **`OllamaClient`**: `POST /api/generate` with the whole prompt (`Prompts.For`), temperature 0, `num_predict` 256 and
   `keep_alive` 30 minutes, read as NDJSON until `done`. `CheckAsync` reads `/api/tags` and looks for the model, and
   `ListModelsAsync` reads the same list for the settings window; `PreloadAsync` rewrites a made-up sentence so the
-  model is loaded before the first pause. Ollama runs the tones in
+  model is loaded before the first pause, and `ReleaseAsync` sends the model with `keep_alive` 0 and no prompt, which
+  unloads it. Ollama runs the tones in
   parallel or queues them, depending on its own settings.
 - **`BuiltInEngine`** (`Local/`): llama.cpp in the process through LLamaSharp, with the Vulkan and CPU native builds.
   `LocalModel` finds the model file (AIR's own download, else Ollama's blob of `qwen2.5:7b`, checked by digest and
   size); `CheckAsync` says `ModelMissing`, `Downloading` or ready without loading it. The weights load once per process
-  behind a lock (all layers on the GPU, then 16, then the CPU) and are freed after 30 minutes idle. Each version is
+  behind a lock (all layers on the GPU, then 16, then the CPU) and are freed after 30 minutes idle, or by
+  `ReleaseAsync` once the version being written lets go of the lock. Each version is
   a fresh stateless run over the ChatML prompt (`Prompts.Chat`), greedy, stopped at `<|im_end|>`. `ModelDownloader`
   (`Llm/`) fetches the two GGUF parts from Hugging Face with a resumable range request and a SHA-256 check, cuts a
   connection quiet for a minute, and tries again with a growing wait while tries bring bytes in; `AppController` runs

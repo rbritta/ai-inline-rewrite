@@ -159,6 +159,36 @@ public class OllamaClientTests
     }
 
     [Fact]
+    public async Task Release_asks_Ollama_to_unload_the_model_at_once()
+    {
+        var http = FakeHttp.Always(HttpStatusCode.OK, """{"model":"qwen2.5:7b","done":true,"done_reason":"unload"}""");
+        await Client(http).ReleaseAsync(CancellationToken.None);
+
+        var (method, uri, body) = Assert.Single(http.Requests);
+        Assert.Equal(HttpMethod.Post, method);
+        Assert.Equal("/api/generate", uri.AbsolutePath);
+        using var doc = JsonDocument.Parse(body);
+        Assert.Equal("qwen2.5:7b", doc.RootElement.GetProperty("model").GetString());
+        Assert.Equal(0, doc.RootElement.GetProperty("keep_alive").GetInt32()); // 0: unload now
+        Assert.False(doc.RootElement.TryGetProperty("prompt", out _)); // no prompt: nothing is written
+    }
+
+    [Theory]
+    [InlineData("unreachable")]
+    [InlineData("error")]
+    [InlineData("cancelled")]
+    public async Task Release_never_throws(string how)
+    {
+        var http = how == "unreachable" ? FakeHttp.Unreachable() : FakeHttp.Always(HttpStatusCode.InternalServerError, "boom");
+        using var cts = new CancellationTokenSource();
+        if (how == "cancelled") await cts.CancelAsync();
+
+        await Client(http).ReleaseAsync(cts.Token);
+
+        Assert.True(http.Requests.Count <= 1);
+    }
+
+    [Fact]
     public async Task The_model_list_comes_from_the_tags()
     {
         var http = FakeHttp.Always(HttpStatusCode.OK, """{"models":[{"name":"qwen2.5:7b"},{"name":"gemma4:12b"}]}""");

@@ -25,6 +25,13 @@ public interface IRewriteEngine
 
     /// <summary>Gets ready so the first rewrite is quick (Ollama loads the model). Never throws.</summary>
     Task PreloadAsync(CancellationToken ct);
+
+    /// <summary>
+    /// Frees the memory the model holds on this PC (video memory, on a graphics card), for when AIR goes to sleep or
+    /// quits, so a game or another app gets it back. <see cref="PreloadAsync"/>, or the next rewrite, loads it again.
+    /// Never throws.
+    /// </summary>
+    Task ReleaseAsync(CancellationToken ct);
 }
 
 /// <summary>The engine failed in a way the bubble can explain (<see cref="EngineStatus"/>).</summary>
