@@ -128,16 +128,48 @@ public class AirKeyDetectorTests
     [InlineData(AirKey.ScrollLock, AirKey.RightShiftTap)]
     [InlineData(AirKey.Insert, AirKey.RightShiftTap)]
     [InlineData(AirKey.RightShiftTap, AirKey.RightCtrlTap)] // never the AIR key itself
-    public void The_off_key_is_a_tap_of_Right_Shift_unless_that_is_the_AIR_key(AirKey airKey, AirKey off)
+    public void The_default_off_key_is_a_tap_of_Right_Shift_unless_that_is_the_AIR_key(AirKey airKey, AirKey off)
     {
-        Assert.Equal(off, AirKeys.OffKey(airKey));
-        Assert.NotEqual(airKey, AirKeys.OffKey(airKey));
+        Assert.Equal(off, AirKeys.DefaultOffKey(airKey));
+        Assert.NotEqual(airKey, AirKeys.DefaultOffKey(airKey));
+    }
+
+    [Theory]
+    [InlineData(AirKey.Pause, AirKey.Pause, AirKey.RightShiftTap)]               // a free key: the off key stays
+    [InlineData(AirKey.RightShiftTap, AirKey.RightShiftTap, AirKey.RightCtrlTap)] // the off key's: the two swap
+    [InlineData(AirKey.RightCtrlTap, AirKey.RightCtrlTap, AirKey.RightShiftTap)]  // the same again: nothing changes
+    public void Choosing_the_AIR_key_never_leaves_both_on_one_key(AirKey key, AirKey air, AirKey off)
+    {
+        var chosen = AirKeys.ChooseAir(AirKey.RightCtrlTap, AirKey.RightShiftTap, key);
+        Assert.Equal((air, off), chosen);
+        Assert.NotEqual(chosen.Air, chosen.Off);
+    }
+
+    [Theory]
+    [InlineData(AirKey.Insert, AirKey.RightCtrlTap, AirKey.Insert)]              // a free key: the AIR key stays
+    [InlineData(AirKey.RightCtrlTap, AirKey.RightShiftTap, AirKey.RightCtrlTap)] // the AIR key's: the two swap
+    [InlineData(AirKey.RightShiftTap, AirKey.RightCtrlTap, AirKey.RightShiftTap)] // the same again: nothing changes
+    public void Choosing_the_off_key_never_leaves_both_on_one_key(AirKey key, AirKey air, AirKey off)
+    {
+        var chosen = AirKeys.ChooseOff(AirKey.RightCtrlTap, AirKey.RightShiftTap, key);
+        Assert.Equal((air, off), chosen);
+        Assert.NotEqual(chosen.Air, chosen.Off);
+    }
+
+    [Fact]
+    public void A_plain_off_key_fires_on_its_key_down_and_ignores_auto_repeat()
+    {
+        var off = new AirKeyDetector(AirKey.ScrollLock);
+        Assert.True(off.KeyDown(Vk.Scroll, 0));
+        Assert.False(off.KeyDown(Vk.Scroll, 500)); // auto-repeat
+        Assert.False(off.KeyUp(Vk.Scroll, 600));
+        Assert.True(off.KeyDown(Vk.Scroll, 1000));
     }
 
     [Fact]
     public void A_capital_typed_with_Right_Shift_is_not_the_off_key()
     {
-        var off = new AirKeyDetector(AirKeys.OffKey(AirKey.RightCtrlTap));
+        var off = new AirKeyDetector(AirKeys.DefaultOffKey(AirKey.RightCtrlTap));
         off.KeyDown(Vk.RShift, 0);
         off.KeyDown(Vk.A, 40); // Shift+A
         off.KeyUp(Vk.A, 70);

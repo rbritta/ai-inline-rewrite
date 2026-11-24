@@ -23,6 +23,7 @@ public sealed class SettingsTests : IDisposable
         Assert.Equal(BubbleLayout.Card, s.Layout);
         Assert.Equal(AppTheme.Windows, s.Theme);
         Assert.Equal(AirKey.RightCtrlTap, s.AirKey);
+        Assert.Equal(AirKey.RightShiftTap, s.OffKey);
         Assert.True(s.FollowCaret);
         Assert.False(s.DiagnosticLog);
         Assert.Equal(EngineKind.BuiltIn, s.Engine); // the model inside AIR, on this PC
@@ -103,6 +104,7 @@ public sealed class SettingsTests : IDisposable
             Layout = BubbleLayout.Compact,
             Theme = AppTheme.Dark,
             AirKey = AirKey.Pause,
+            OffKey = AirKey.Insert,
             FollowCaret = false,
             BubbleLeft = 10,
             BubbleTop = 20,
@@ -161,11 +163,25 @@ public sealed class SettingsTests : IDisposable
     [Fact]
     public void Normalize_replaces_values_outside_the_enums()
     {
-        var s = new Settings { Layout = (BubbleLayout)9, Theme = (AppTheme)9, AirKey = (AirKey)9, Engine = (EngineKind)9 }.Normalize();
+        var s = new Settings { Layout = (BubbleLayout)9, Theme = (AppTheme)9, AirKey = (AirKey)9, OffKey = (AirKey)9, Engine = (EngineKind)9 }.Normalize();
         Assert.Equal(BubbleLayout.Card, s.Layout);
         Assert.Equal(AppTheme.Windows, s.Theme);
         Assert.Equal(AirKey.RightCtrlTap, s.AirKey);
+        Assert.Equal(AirKey.RightShiftTap, s.OffKey);
         Assert.Equal(EngineKind.BuiltIn, s.Engine);
+    }
+
+    [Theory]
+    [InlineData("""{ "AirKey": "RightCtrlTap" }""", AirKey.RightShiftTap)] // from before the off key was a setting:
+    [InlineData("""{ "AirKey": "Pause" }""", AirKey.RightShiftTap)]        // it keeps the key it had
+    [InlineData("""{ "AirKey": "RightShiftTap" }""", AirKey.RightCtrlTap)]
+    [InlineData("""{ "AirKey": "Pause", "OffKey": "Insert" }""", AirKey.Insert)]
+    [InlineData("""{ "AirKey": "Insert", "OffKey": "Insert" }""", AirKey.RightShiftTap)] // hand-edited onto the AIR key
+    public void The_off_key_is_kept_and_never_the_AIR_key(string json, AirKey expected)
+    {
+        var s = SettingsStore.Parse(json);
+        Assert.Equal(expected, s.OffKey);
+        Assert.NotEqual(s.AirKey, s.OffKey);
     }
 
     [Theory]

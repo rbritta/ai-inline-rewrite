@@ -34,10 +34,11 @@ public static class PreviewRenderer
             Save(Bubble(p, Blocked(EngineKind.Ollama, EngineState.ModelMissing, Settings.DefaultOllamaModel)), Path.Combine(folder, $"bubble-card-model-missing-{theme}.png"));
             Save(Bubble(p, Blocked(EngineKind.Claude, EngineState.NoKey, Settings.DefaultClaudeModel)), Path.Combine(folder, $"bubble-card-no-key-{theme}.png"));
             Save(Bubble(p, Blocked(EngineKind.BuiltIn, EngineState.ModelMissing, LocalModel.Id)), Path.Combine(folder, $"bubble-card-builtin-missing-{theme}.png"));
-            Save(SettingsContent(new RenderHost(dark)), Path.Combine(folder, $"settings-{theme}.png"));
+            foreach (var page in Enum.GetValues<SettingsPage>())
+                Save(SettingsContent(new RenderHost(dark), page), Path.Combine(folder, $"settings-{page.ToString().ToLowerInvariant()}-{theme}.png"));
             // the built-in model downloading, 40 % through
             var downloading = new DownloadProgress(LocalModel.DownloadSize * 2 / 5, LocalModel.DownloadSize);
-            Save(SettingsContent(new RenderHost(dark, EngineState.Downloading, downloading)), Path.Combine(folder, $"settings-downloading-{theme}.png"));
+            Save(SettingsContent(new RenderHost(dark, EngineState.Downloading, downloading), SettingsPage.Engine), Path.Combine(folder, $"settings-downloading-{theme}.png"));
         }
     }
 
@@ -96,10 +97,10 @@ public static class PreviewRenderer
         Child = BubbleView.Create(s, p).Root,
     };
 
-    private static FrameworkElement SettingsContent(RenderHost host)
+    private static FrameworkElement SettingsContent(RenderHost host, SettingsPage page)
     {
         bool dark = host.WindowsIsDark;
-        var window = new SettingsWindow(host);
+        var window = new SettingsWindow(host, page: page);
         var content = (FrameworkElement)window.Content;
         window.Content = null;
         content.Width = window.Width; // the window's fixed width, so the help lines wrap as they do on screen
@@ -133,6 +134,7 @@ public static class PreviewRenderer
         public void SetLayout(BubbleLayout layout) { }
         public void SetTheme(AppTheme theme) { }
         public void SetAirKey(AirKey key) { }
+        public void SetOffKey(AirKey key) { }
         public void SetFollow(bool on) { }
         public EngineState EngineState => state;
         public void SetEngine(EngineKind engine) { }

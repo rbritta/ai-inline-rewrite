@@ -1,6 +1,6 @@
 # Engines
 
-AIR asks a language model for each version. It has three engines, chosen in the settings window (the Engine section)
+AIR asks a language model for each version. It has three engines, chosen in the settings window (its Engine page)
 or with `Engine` in `settings.json`:
 
 - **Built-in** (the default): the open model Qwen2.5 7B Instruct, run by AIR itself. Nothing else to install; the
@@ -114,7 +114,7 @@ GPU. Ollama itself is open source under the MIT license.
 
 ### Another Ollama model
 
-Pull it, then pick it in the settings window: the Engine section lists the models Ollama has installed, and a new
+Pull it, then pick it in the settings window: the Engine page lists the models Ollama has installed, and a new
 model applies at once. Or set it in `settings.json` while AIR is closed:
 
 ```powershell
@@ -249,7 +249,7 @@ prompt and the sentence as the user message ([PROMPTS.md](PROMPTS.md)).
 2. **AIR, started after it.** A program sees the environment variables it was started with, so quit AIR if it is
    running and start it from the Start menu or Explorer (a terminal opened before step 1 does not have the variable
    yet).
-3. **The engine.** In the settings window, pick Claude in the Engine section, and the model. It applies at once.
+3. **The engine.** In the settings window, pick Claude on the Engine page, and the model. It applies at once.
    Or, with AIR closed, set it in `%AppData%\AiInlineRewrite\settings.json` (create the file if it is not there yet;
    the fields left out keep their defaults):
 

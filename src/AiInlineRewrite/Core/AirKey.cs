@@ -1,9 +1,10 @@
 namespace AiInlineRewrite.Core;
 
 /// <summary>
-/// The one global key of the app. A tap key (Right Ctrl, Right Shift) counts only when pressed and released alone,
-/// so the key keeps working in chords; a plain key (Pause, Scroll Lock, Insert) is given up to AIR entirely.
-/// Nothing uses Ctrl+Alt: on the Brazilian ABNT2 keyboard that is AltGr.
+/// A global key of the app: the AIR key and the off key are each one of these, never the same one. A tap key (Right
+/// Ctrl, Right Shift) counts only when pressed and released alone, so the key keeps working in chords; a plain key
+/// (Pause, Scroll Lock, Insert) is given up to AIR entirely. Nothing uses Ctrl+Alt: on the Brazilian ABNT2 keyboard
+/// that is AltGr.
 /// </summary>
 public enum AirKey
 {
@@ -32,11 +33,17 @@ public static class AirKeys
     public static bool IsTap(AirKey key) => key is AirKey.RightCtrlTap or AirKey.RightShiftTap;
 
     /// <summary>
-    /// The off key: a tap of Right Shift alone puts AIR to sleep (the bubble closes, nothing is written) until the AIR
-    /// key wakes it. When Right Shift is the AIR key, the off key is a tap of Right Ctrl.
+    /// The off key when none is chosen: a tap of Right Shift, or of Right Ctrl when Right Shift is the AIR key. The off
+    /// key puts AIR to sleep (the bubble closes, nothing is written) until the AIR key wakes it.
     /// </summary>
-    public static AirKey OffKey(AirKey airKey) =>
+    public static AirKey DefaultOffKey(AirKey airKey) =>
         airKey == AirKey.RightShiftTap ? AirKey.RightCtrlTap : AirKey.RightShiftTap;
+
+    /// <summary>The AIR key becomes <paramref name="key"/>; when that was the off key, the off key takes the old AIR key.</summary>
+    public static (AirKey Air, AirKey Off) ChooseAir(AirKey air, AirKey off, AirKey key) => (key, key == off ? air : off);
+
+    /// <summary>The off key becomes <paramref name="key"/>; when that was the AIR key, the AIR key takes the old off key.</summary>
+    public static (AirKey Air, AirKey Off) ChooseOff(AirKey air, AirKey off, AirKey key) => (key == air ? off : air, key);
 
     public static string Label(AirKey key) => key switch
     {

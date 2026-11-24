@@ -45,8 +45,8 @@ sentence you are typing and writes it again in English, once per tone:
 
 Then tap the **AIR key** (Right Ctrl, alone) and pick a version: it replaces your sentence in place. Or ignore it
 and keep typing: the versions clear, and new ones come at the next pause. The bubble stays by your text while AIR is
-on; when you want it gone, tap **Right Shift** alone to put AIR to sleep (or turn it off in the settings or the tray
-menu), and the AIR key brings it back.
+on; when you want it gone, tap **Right Shift** alone (the off key) to put AIR to sleep (or turn it off in the
+settings or the tray menu), and the AIR key brings it back.
 
 ## Engines
 
@@ -119,7 +119,7 @@ repository's issue form with AIR's version and engine filled in; what you typed 
 | **Enter** | applies the selected version |
 | **1** to **7** | applies that version directly |
 | **Esc** | clears the versions |
-| Tap **Right Shift** alone | AIR sleeps: the bubble closes and nothing is written until you tap the AIR key |
+| Tap **Right Shift** alone (the off key) | AIR sleeps: the bubble closes and nothing is written until you tap the AIR key |
 | Any other key, or 4 s without a key | leaves pick mode, and the key types as usual |
 | Click a version | applies it |
 | Drag the bubble by its bar | leaves it there (see *Follow the text cursor*) |
@@ -133,8 +133,8 @@ repository's issue form with AIR's version and engine filled in; what you typed 
 The keys above are taken from the app you type in only while pick mode is on; the rest of the time AIR only listens.
 Right Ctrl keeps working as Ctrl in any combination (Ctrl+C, Ctrl+click): only a press and release with no other key
 counts as a tap. Right Shift too: a capital typed with it is not a tap. When AIR is off or asleep, the AIR key turns
-it back on; when Right Shift is the AIR key, a tap of Right Ctrl puts AIR to sleep. Nothing uses Ctrl+Alt, which is
-AltGr on the ABNT2 keyboards many Brazilians use.
+it back on. Both keys can be changed in the settings, and they are never the same key: giving one the other's key
+swaps them. Nothing uses Ctrl+Alt, which is AltGr on the ABNT2 keyboards many Brazilians use.
 
 **Applying** deletes your sentence from the end of the field and pastes the version, then puts back whatever was on your
 clipboard (text, images, files). Ctrl+Z in the app undoes it. If the field changed meanwhile (you typed after the
@@ -180,26 +180,33 @@ language guess and a few status texts; [docs/PROMPTS.md](docs/PROMPTS.md#another
 ## Settings
 
 Click the gear in the bubble, and the settings open beside it; or click the tray icon, and they open above the tray.
+A menu on the left picks the page (Ctrl+Tab goes to the next one). They open on General, or on Engine when the engine
+needs a step from you, such as the built-in model's download.
 
 <div align="center">
 
-<img src="docs/settings.png" width="380" alt="The settings window: AIR on, the seven tones with checkboxes, key numbers and reorder arrows, Layout Card or Compact, Theme Windows, Light or Dark, the AIR key dropdown, Follow the text cursor with its arrow, and the Engine section: Built-in, Ollama or Claude, the model Qwen2.5 7B Instruct, and a green dot with Ready." />
+<img src="docs/settings.png" width="480" alt="The settings window on its General page: on the left the menu with General, Tones, Bubble and Engine, a green dot beside Engine; on the right AIR on, the AIR key set to Tap Right Ctrl, and the off key set to Tap Right Shift." />
 
 </div>
 
-- **AIR** on or off. Off, AIR stops reading what you type.
+- **General**
+  - **AIR** on or off. Off, AIR stops reading what you type.
+  - **AIR key**: a tap of Right Ctrl (default) or of Right Shift, or Pause, Scroll Lock or Insert.
+  - **Off key**: puts AIR to sleep. A tap of Right Shift (default; Right Ctrl when Right Shift is the AIR key), or
+    any other key of the AIR key's list. Giving it the AIR key's key swaps the two.
 - **Tones**, as above.
-- **Layout**: *Card* (the bar on top, as above) or *Compact* (a tighter list, the bar at the bottom). Clicking an
-  option floats a preview beside the window.
-- **Theme**: follow Windows, Light or Dark.
-- **AIR key**: a tap of Right Ctrl (default) or of Right Shift, or Pause, Scroll Lock or Insert.
-- **Follow the text cursor**: the bubble sits under the text cursor (filled arrow). Drag it somewhere and it stays
-  there (grey outline arrow); click the arrow beside the gear to bring it back.
-- **Engine**: Ollama or Claude, and the model: the models Ollama has installed, or Claude Haiku, Sonnet or Opus 5.5.
-  Below them, the engine's state (a green dot and Ready, or what is wrong and the one step that fixes it). A change
-  applies at once, without a restart. The Anthropic credential is never typed here; it stays in the environment
-  ([Engines](#engines)). Switching engines in the running app is covered by the desktop smoke test; picking another
-  model there is [not validated yet](TODO.md#not-validated-yet).
+- **Bubble**
+  - **Layout**: *Card* (the bar on top, as above) or *Compact* (a tighter list, the bar at the bottom). Clicking an
+    option floats a preview beside the window.
+  - **Theme**: follow Windows, Light or Dark.
+  - **Follow the text cursor**: the bubble sits under the text cursor (filled arrow). Drag it somewhere and it stays
+    there (grey outline arrow); click the arrow beside the gear to bring it back.
+- **Engine**: Built-in, Ollama or Claude, and the model: the built-in one, the models Ollama has installed, or Claude
+  Haiku, Sonnet or Opus 5.5. Below them, the engine's state (a green dot and Ready, or what is wrong and the one step
+  that fixes it); the same dot sits beside Engine in the menu. A change applies at once, without a restart. The
+  Anthropic credential is never typed here; it stays in the environment ([Engines](#engines)). Switching engines in
+  the running app is covered by the desktop smoke test; picking another model there is
+  [not validated yet](TODO.md#not-validated-yet).
 
 <div align="center">
 
@@ -209,7 +216,7 @@ Click the gear in the bubble, and the settings open beside it; or click the tray
 
 The settings live in `%AppData%\AiInlineRewrite\settings.json`, and the built-in engine's model in
 `%LocalAppData%\AiInlineRewrite\models`. `Engine`, `OllamaModel` and `ClaudeModel` are also
-in the window's Engine section; the rest have no switch there:
+on the window's Engine page; the rest have no switch there:
 
 | Field | Default | What |
 |---|---|---|

@@ -331,7 +331,12 @@ def run(air_pid, tgt_pid, pids):
     if sw:
         shot('6-settings.png', wi.rect(sw))
 
-        # the engine picker, in the running app: Claude (no credential here, so its no-key state at once), then back
+        # the engine picker, on the Engine page, in the running app: Claude (no credential here, so its no-key state at
+        # once), then back
+        paged = wi.uia_press(air_pid, SETTINGS_WIN, 'Engine', 'TabItem')
+        check('the menu opens the Engine page',
+              paged and within(3, lambda: any(e['type'] == 'RadioButton' and e['name'] == 'Built-in' for e in settings_ui())),
+              f'pressed {paged}')
         ollama = next((e for e in settings_ui() if e['type'] == 'RadioButton' and e['name'] == 'Ollama'), None)
         if anthropic_credential() or not ollama or ollama['toggle'] != 'On':
             print('SKIP engine picker: it needs Ollama as the engine and no Anthropic credential on this PC', flush=True)

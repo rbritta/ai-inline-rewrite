@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Automation;
+using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -34,7 +35,11 @@ public interface ISettingsHost
 
     void SetTheme(AppTheme theme);
 
+    /// <summary>Sets the AIR key; when that was the off key, the off key takes the old AIR key.</summary>
     void SetAirKey(AirKey key);
+
+    /// <summary>Sets the off key; when that was the AIR key, the AIR key takes the old off key.</summary>
+    void SetOffKey(AirKey key);
 
     void SetFollow(bool on);
 
@@ -62,21 +67,46 @@ public interface ISettingsHost
     void CancelModelDownload();
 }
 
+/// <summary>The pages of the settings window, one per item of its menu.</summary>
+public enum SettingsPage
+{
+    /// <summary>AIR on or off, the AIR key and the off key.</summary>
+    General,
+
+    /// <summary>Which tones are versions, and their order.</summary>
+    Tones,
+
+    /// <summary>Layout, theme, and following the text cursor.</summary>
+    Bubble,
+
+    /// <summary>The engine, its model, and its state.</summary>
+    Engine,
+}
+
 /// <summary>
-/// The settings window (design/experience.html): a sober 40 px title bar with the loose Q, "AI Inline Rewrite ·
-/// Settings" and an X; then AIR on/off, Tones (check, order by the arrows or by dragging, one line each), Layout and
-/// Theme (a click floats a preview beside the window), the AIR key, Follow the text cursor with its arrow, and the
-/// Engine: Ollama or Claude, the model, and the engine's state with the one step that fixes it.
+/// The settings window: a sober 40 px title bar with the loose Q, "AI Inline Rewrite · Settings" and an X; below it, a
+/// menu on the left and the page it picks on the right, the same height for every page. General: AIR on/off, the AIR
+/// key and the off key. Tones: check, order by the arrows or by dragging, one line each. Bubble: Layout and Theme (a
+/// click floats a preview beside the window), and Follow the text cursor with its arrow. Engine: Built-in, Ollama or
+/// Claude, the model, and the engine's state with the one step that fixes it (its color also marks the menu item).
 /// </summary>
 public sealed class SettingsWindow : Window
 {
     private const double Pad = 24;
-    private const double Width0 = 384;
+    private const double NavWidth = 144;
+    private const double PageWidth = 384;
+
+    private static readonly Thickness PageMargin = new(16, 4, 16, 16);
+
+    private static readonly (SettingsPage Page, string Label)[] Pages =
+        [(SettingsPage.General, "General"), (SettingsPage.Tones, "Tones"), (SettingsPage.Bubble, "Bubble"), (SettingsPage.Engine, "Engine")];
 
     private readonly ISettingsHost _host;
     private readonly (Rect Bubble, Rect Area)? _beside;
     private readonly PreviewWindow _preview = new();
     private readonly DispatcherTimer _previewTimer = new();
+    private readonly Dictionary<SettingsPage, NavItem> _nav = [];
+    private SettingsPage _page;
     private ScrollViewer? _scroll;
     private FrameworkElement? _previewSection;
     private bool _previewLeaving;
@@ -84,6 +114,8 @@ public sealed class SettingsWindow : Window
     private Toggle? _onToggle;
     private Toggle? _followToggle;
     private Border? _followIconHost;
+    private Border? _keysBody;
+    private Ellipse? _engineDot;
 
     // the Engine section: filled again when the engine, the model or Ollama's model list changes; the status line
     // alone when the engine's state does
@@ -101,16 +133,18 @@ public sealed class SettingsWindow : Window
     /// <param name="host">The app: the settings to edit and what to do when they change.</param>
     /// <param name="beside">Opened from the gear: the bubble and its monitor's work area, so the window opens beside
     /// it. Null (the tray, a second launch): above the tray.</param>
-    public SettingsWindow(ISettingsHost host, (Rect Bubble, Rect Area)? beside = null)
+    /// <param name="page">The page it opens on.</param>
+    public SettingsWindow(ISettingsHost host, (Rect Bubble, Rect Area)? beside = null, SettingsPage page = SettingsPage.General)
     {
         _host = host;
         _beside = beside;
+        _page = page;
         WindowStyle = WindowStyle.None;
         AllowsTransparency = true;
         Background = Brushes.Transparent;
         ResizeMode = ResizeMode.NoResize;
         SizeToContent = SizeToContent.Height;
-        Width = Width0 + 2 * Pad;
+        Width = NavWidth + PageWidth + 2 * Pad;
         ShowInTaskbar = true;
         Title = "AI Inline Rewrite Settings";
         Topmost = true;
@@ -121,6 +155,14 @@ public sealed class SettingsWindow : Window
             {
                 e.Handled = true;
                 Close();
+            }
+            else if (e.Key == Key.Tab && Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            {
+                // Ctrl+Tab and Ctrl+Shift+Tab go round the pages
+                e.Handled = true;
+                int step = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift) ? -1 : 1;
+                int i = Array.FindIndex(Pages, x => x.Page == _page);
+                ShowPage(Pages[(i + step + Pages.Length) % Pages.Length].Page);
             }
         };
         PreviewMouseMove += (_, _) => TrackPreviewMouse();
@@ -137,7 +179,7 @@ public sealed class SettingsWindow : Window
         Rebuild();
     }
 
-    /// <summary>Builds the content again (after a theme change), keeping the scroll position.</summary>
+    /// <summary>Builds the content again (after a theme change), keeping the page and its scroll position.</summary>
     public void Rebuild()
     {
         double scroll = _scroll?.VerticalOffset ?? 0;
@@ -145,23 +187,19 @@ public sealed class SettingsWindow : Window
         var p = _host.Palette;
         MaxHeight = SystemParameters.WorkArea.Height - 24 + 2 * Pad;
 
-        var body = new StackPanel { Margin = new Thickness(16, 4, 16, 16) };
-        body.Children.Add(OnSection(p, first: true));
-        body.Children.Add(TonesSection(p));
-        body.Children.Add(ChoiceSection(p, "style", "Layout",
-            [(nameof(BubbleLayout.Card), "Card"), (nameof(BubbleLayout.Compact), "Compact")], _host.Settings.Layout.ToString()));
-        body.Children.Add(ChoiceSection(p, "theme", "Theme",
-            [(nameof(AppTheme.Windows), "Windows"), (nameof(AppTheme.Light), "Light"), (nameof(AppTheme.Dark), "Dark")], _host.Settings.Theme.ToString()));
-        body.Children.Add(KeySection(p));
-        body.Children.Add(FollowSection(p));
-        body.Children.Add(EngineSection(p));
+        _scroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Focusable = false, Height = PageHeight(p) };
+        FillPage(p);
+        var main = new DockPanel();
+        var nav = Nav(p);
+        DockPanel.SetDock(nav, Dock.Left);
+        main.Children.Add(nav);
+        main.Children.Add(_scroll);
 
-        _scroll = new ScrollViewer { Content = body, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Focusable = false };
         var dock = new DockPanel();
         var title = TitleBar(p);
         DockPanel.SetDock(title, Dock.Top);
         dock.Children.Add(title);
-        dock.Children.Add(_scroll);
+        dock.Children.Add(main);
 
         var frame = new Border
         {
@@ -188,7 +226,173 @@ public sealed class SettingsWindow : Window
     }
 
     /// <summary>Reflects a new state of the engine (its check finished, or a version failed).</summary>
-    public void SyncEngine() => FillEngineStatus(_host.Palette);
+    public void SyncEngine()
+    {
+        FillEngineStatus(_host.Palette);
+        PaintEngineDot(_host.Palette);
+    }
+
+    /// <summary>Shows <paramref name="page"/> on the right, from its top.</summary>
+    public void ShowPage(SettingsPage page)
+    {
+        if (page == _page || _scroll is null) return;
+        HidePreview();
+        _page = page;
+        FillPage(_host.Palette);
+        _scroll.ScrollToVerticalOffset(0);
+        PaintNav(_host.Palette);
+    }
+
+    // Every page is as tall as Tones, the tallest, so the window keeps its size from page to page; a screen too short
+    // for it gets a shorter page, which scrolls. (The frame's two borders come off the page's width.)
+    private double PageHeight(Palette p)
+    {
+        var tones = new StackPanel { Margin = PageMargin };
+        tones.Children.Add(TonesSection(p, first: true));
+        tones.Measure(new Size(PageWidth - 2, double.PositiveInfinity));
+        double room = SystemParameters.WorkArea.Height - 24 - 42;
+        return Math.Max(200, Math.Min(Math.Ceiling(tones.DesiredSize.Height), room));
+    }
+
+    private void FillPage(Palette p)
+    {
+        var body = new StackPanel { Margin = PageMargin };
+        switch (_page)
+        {
+            case SettingsPage.Tones:
+                body.Children.Add(TonesSection(p, first: true));
+                break;
+            case SettingsPage.Bubble:
+                body.Children.Add(ChoiceSection(p, "style", "Layout",
+                    [(nameof(BubbleLayout.Card), "Card"), (nameof(BubbleLayout.Compact), "Compact")], _host.Settings.Layout.ToString(), first: true));
+                body.Children.Add(ChoiceSection(p, "theme", "Theme",
+                    [(nameof(AppTheme.Windows), "Windows"), (nameof(AppTheme.Light), "Light"), (nameof(AppTheme.Dark), "Dark")], _host.Settings.Theme.ToString()));
+                body.Children.Add(FollowSection(p));
+                break;
+            case SettingsPage.Engine:
+                body.Children.Add(EngineSection(p, first: true));
+                break;
+            default:
+                body.Children.Add(OnSection(p, first: true));
+                body.Children.Add(KeysSection(p));
+                break;
+        }
+        _scroll!.Content = body;
+    }
+
+    // ---------- the menu ----------
+
+    private sealed record NavItem(DrawnButton Button, Border Pill, Border Icon, TextBlock Label);
+
+    private Border Nav(Palette p)
+    {
+        _nav.Clear();
+        _engineDot = null;
+        var list = new StackPanel();
+        foreach (var (page, label) in Pages) list.Children.Add(NavButton(p, page, label));
+        PaintNav(p);
+        return new Border
+        {
+            Width = NavWidth,
+            Background = p.Surface2,
+            BorderBrush = p.Border,
+            BorderThickness = new Thickness(0, 0, 1, 0),
+            Padding = new Thickness(8, 10, 8, 10),
+            Child = list,
+        };
+    }
+
+    private DrawnButton NavButton(Palette p, SettingsPage page, string label)
+    {
+        var dock = new DockPanel { LastChildFill = true };
+        var pill = new Border { Width = 3, Height = 16, CornerRadius = new CornerRadius(1.5), Margin = new Thickness(0, 0, 9, 0), VerticalAlignment = VerticalAlignment.Center };
+        DockPanel.SetDock(pill, Dock.Left);
+        dock.Children.Add(pill);
+        var icon = new Border { Width = 16, Height = 16, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
+        DockPanel.SetDock(icon, Dock.Left);
+        dock.Children.Add(icon);
+        if (page == SettingsPage.Engine)
+        {
+            // the engine's state at a glance, in the colors of the Engine page's status line
+            var dot = new Ellipse { Width = 7, Height = 7, Margin = new Thickness(8, 0, 2, 0), VerticalAlignment = VerticalAlignment.Center };
+            DockPanel.SetDock(dot, Dock.Right);
+            dock.Children.Add(dot);
+            _engineDot = dot;
+        }
+        var text = Controls.Text(label, 13, p.Text);
+        text.VerticalAlignment = VerticalAlignment.Center;
+        dock.Children.Add(text);
+
+        var button = new DrawnButton
+        {
+            Kind = AutomationControlType.TabItem,
+            Height = 34,
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(4, 0, 8, 0),
+            Margin = new Thickness(0, 0, 0, 2),
+            Background = Brushes.Transparent,
+            Cursor = Cursors.Hand,
+            Focusable = true,
+            FocusVisualStyle = Controls.FocusRing(p),
+            Child = dock,
+        };
+        AutomationProperties.SetName(button, label);
+        button.MouseEnter += (_, _) => { if (_page != page) button.Background = p.KeyBg; };
+        button.MouseLeave += (_, _) => { if (_page != page) button.Background = Brushes.Transparent; };
+        Controls.OnActivate(button, _ => ShowPage(page));
+        button.KeyDown += (_, e) =>
+        {
+            if (e.Key is not (Key.Up or Key.Down)) return;
+            e.Handled = true;
+            int i = Array.FindIndex(Pages, x => x.Page == page) + (e.Key == Key.Down ? 1 : -1);
+            if (i < 0 || i >= Pages.Length) return;
+            ShowPage(Pages[i].Page);
+            _nav[Pages[i].Page].Button.Focus();
+        };
+        _nav[page] = new NavItem(button, pill, icon, text);
+        return button;
+    }
+
+    private void PaintNav(Palette p)
+    {
+        foreach (var (page, item) in _nav)
+        {
+            bool on = page == _page;
+            item.Button.Background = on ? p.Hover : Brushes.Transparent;
+            item.Pill.Background = on ? p.Accent : Brushes.Transparent;
+            item.Icon.Child = NavIcon(page, on ? p.Accent : p.Muted);
+            item.Label.FontWeight = on ? FontWeights.SemiBold : FontWeights.Normal;
+            AutomationProperties.SetItemStatus(item.Button, on ? "Selected" : "");
+        }
+        PaintEngineDot(p);
+    }
+
+    private static FrameworkElement NavIcon(SettingsPage page, Brush color) => page switch
+    {
+        SettingsPage.Tones => Icons.Lines(color),
+        SettingsPage.Bubble => Icons.SpeechBubble(color),
+        SettingsPage.Engine => Icons.Chip(color),
+        _ => Icons.Power(color),
+    };
+
+    private void PaintEngineDot(Palette p)
+    {
+        if (_engineDot is null) return;
+        var state = _host.EngineState;
+        _engineDot.Fill = StateBrush(p, state);
+        _engineDot.ToolTip = state == EngineState.Unknown
+            ? "Checking…"
+            : EngineStatus.Status(_host.Settings.Engine, state, _host.Settings.ActiveModel());
+    }
+
+    // green ready, the accent while downloading (progress, not a fault), red to fix, grey checking or busy
+    private static Brush StateBrush(Palette p, EngineState state) => state switch
+    {
+        EngineState.Ready => p.InsFg,
+        EngineState.Downloading => p.Accent,
+        _ when EngineStatus.Blocks(state) => p.DelFg,
+        _ => p.Muted,
+    };
 
     // ---------- placement: beside the bubble (from the gear), else above the tray ----------
 
@@ -334,24 +538,54 @@ public sealed class SettingsWindow : Window
             "Off: the bubble stays where you leave it. The same arrow beside the gear switches it.", _followToggle, _followIconHost));
     }
 
-    private FrameworkElement KeySection(Palette p)
+    // The AIR key and the off key, filled again when either changes: taking the other's key swaps the two.
+    private Border KeysSection(Palette p)
+    {
+        _keysBody = new Border();
+        FillKeys(p, focus: null);
+        return _keysBody;
+    }
+
+    private void FillKeys(Palette p, string? focus)
+    {
+        if (_keysBody is null) return;
+        var s = _host.Settings;
+        var options = AirKeys.All.Select(k => (k.ToString(), AirKeys.Label(k))).ToList();
+        var air = new Dropdown(p, options, s.AirKey.ToString(), "AIR key");
+        air.Chosen += v =>
+        {
+            _host.SetAirKey(Enum.Parse<AirKey>(v));
+            FillKeys(_host.Palette, "air");
+        };
+        var off = new Dropdown(p, options, s.OffKey.ToString(), "Off key");
+        off.Chosen += v =>
+        {
+            _host.SetOffKey(Enum.Parse<AirKey>(v));
+            FillKeys(_host.Palette, "off");
+        };
+        var stack = new StackPanel();
+        stack.Children.Add(KeySection(p, "AIR key", "Opens pick mode: then ↑ ↓ and Enter, a number, or Esc. A tap is a press and release with no other key.", air));
+        stack.Children.Add(KeySection(p, "Off key", "Puts AIR to sleep: the bubble closes and AIR stops reading until the AIR key wakes it. Choosing the AIR key here swaps the two.", off));
+        _keysBody.Child = stack;
+        if (focus == "air") air.Focus();
+        else if (focus == "off") off.Focus();
+    }
+
+    private static Border KeySection(Palette p, string title, string help, Dropdown select)
     {
         var stack = new StackPanel();
-        stack.Children.Add(H3(p, "AIR key"));
-        stack.Children.Add(Help(p, "Opens pick mode: then ↑ ↓ and Enter, a number, or Esc. A tap is a press and release with no other key."));
-        var options = AirKeys.All.Select(k => (k.ToString(), AirKeys.Label(k))).ToList();
-        var select = new Dropdown(p, options, _host.Settings.AirKey.ToString(), "AIR key");
-        select.Chosen += v => _host.SetAirKey(Enum.Parse<AirKey>(v));
+        stack.Children.Add(H3(p, title));
+        stack.Children.Add(Help(p, help));
         stack.Children.Add(select);
         return Section(p, false, stack);
     }
 
-    private FrameworkElement ChoiceSection(Palette p, string kind, string title, IReadOnlyList<(string, string)> options, string selected)
+    private FrameworkElement ChoiceSection(Palette p, string kind, string title, IReadOnlyList<(string, string)> options, string selected, bool first = false)
     {
         var stack = new StackPanel();
         stack.Children.Add(H3(p, title));
         var seg = new Segmented(p, options, selected, title) { Margin = new Thickness(0, 8, 0, 0) };
-        var section = Section(p, false, stack);
+        var section = Section(p, first, stack);
         seg.Picked += (value, _) =>
         {
             if (kind == "style") _host.SetLayout(Enum.Parse<BubbleLayout>(value));
@@ -366,11 +600,11 @@ public sealed class SettingsWindow : Window
 
     // ---------- engine ----------
 
-    private FrameworkElement EngineSection(Palette p)
+    private FrameworkElement EngineSection(Palette p, bool first)
     {
         _engineBody = new Border();
         FillEngine(p, focus: null);
-        return Section(p, false, _engineBody);
+        return Section(p, first, _engineBody);
     }
 
     private void FillEngine(Palette p, string? focus)
@@ -451,14 +685,7 @@ public sealed class SettingsWindow : Window
         {
             Width = 8,
             Height = 8,
-            // a download under way is progress, not a fault
-            Fill = state switch
-            {
-                EngineState.Ready => p.InsFg,
-                EngineState.Downloading => p.Accent,
-                _ when EngineStatus.Blocks(state) => p.DelFg,
-                _ => p.Muted,
-            },
+            Fill = StateBrush(p, state),
             Margin = new Thickness(1, 0, 9, 0),
             VerticalAlignment = VerticalAlignment.Center,
         };
@@ -540,7 +767,7 @@ public sealed class SettingsWindow : Window
 
     // ---------- tones ----------
 
-    private FrameworkElement TonesSection(Palette p)
+    private FrameworkElement TonesSection(Palette p, bool first)
     {
         var stack = new StackPanel();
         stack.Children.Add(H3(p, "Tones"));
@@ -557,7 +784,7 @@ public sealed class SettingsWindow : Window
         _toneList.SizeChanged += (_, e) => _toneList.Clip = new RectangleGeometry(new Rect(e.NewSize), 9, 9);
         FillTones(p);
         stack.Children.Add(frame);
-        return Section(p, false, stack);
+        return Section(p, first, stack);
     }
 
     private void FillTones(Palette p)

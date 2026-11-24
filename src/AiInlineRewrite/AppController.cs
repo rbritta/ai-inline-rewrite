@@ -47,7 +47,7 @@ public sealed class AppController : ISettingsHost, IDisposable
     private IRewriteEngine _rewriter;
     private AirKeyDetector _air;
 
-    // The off key (AirKeys.OffKey): the same tap rules as the AIR key, so Shift keeps typing capitals.
+    // The off key (Settings.OffKey): the same rules as the AIR key, so a tap of Shift still types capitals.
     private AirKeyDetector _off;
     private BubbleWindow _bubble = null!;
     private SettingsWindow? _settingsWindow;
@@ -93,7 +93,7 @@ public sealed class AppController : ISettingsHost, IDisposable
         RewriteEngines.BuiltIn = () => new Local.BuiltInEngine(() => _download is not null);
         _rewriter = RewriteEngines.Create(_settings);
         _air = new AirKeyDetector(_settings.AirKey);
-        _off = new AirKeyDetector(AirKeys.OffKey(_settings.AirKey));
+        _off = new AirKeyDetector(_settings.OffKey);
     }
 
     public Settings Settings => _settings;
@@ -246,9 +246,20 @@ public sealed class AppController : ISettingsHost, IDisposable
         if (e.Own || (e.Injected && !_acceptInjected)) return false; // AIR's own paste, or another program's keystrokes
         if (e.Down)
         {
-            _off.KeyDown(e.Vk, e.TimeMs); // a tap key: it never fires on key-down
-            if (_off.IsAirKey(e.Vk) && _off.Armed) Post(_mouse.Install);
-            if (_air.KeyDown(e.Vk, e.TimeMs))
+            // both detectors see every key-down, so each knows when the other's key is held
+            bool offFired = _off.KeyDown(e.Vk, e.TimeMs);
+            bool airFired = _air.KeyDown(e.Vk, e.TimeMs);
+            if (offFired)
+            {
+                Post(OnOffKey);
+                return true; // a plain off key belongs to AIR
+            }
+            if (_off.IsAirKey(e.Vk))
+            {
+                if (!_off.IsTap) return true;
+                if (_off.Armed) Post(_mouse.Install);
+            }
+            if (airFired)
             {
                 Post(OnAirKey);
                 return true; // a plain AIR key belongs to AIR
@@ -298,7 +309,11 @@ public sealed class AppController : ISettingsHost, IDisposable
             });
             return false; // its key-up still reaches the app
         }
-        if (_off.IsAirKey(e.Vk)) Post(_mouse.Uninstall);
+        if (_off.IsAirKey(e.Vk))
+        {
+            if (!_off.IsTap) return true;
+            Post(_mouse.Uninstall);
+        }
         if (_air.IsAirKey(e.Vk))
         {
             if (!_air.IsTap) return true;
@@ -794,6 +809,7 @@ public sealed class AppController : ISettingsHost, IDisposable
 
     public void OpenSettings() => OpenSettings(fromBubble: false);
 
+    // An engine waiting for a step (a model to download, Ollama to start, a key) opens them on the Engine page.
     private void OpenSettings(bool fromBubble)
     {
         if (_settingsWindow is not null)
@@ -801,7 +817,8 @@ public sealed class AppController : ISettingsHost, IDisposable
             _settingsWindow.Activate();
             return;
         }
-        _settingsWindow = new SettingsWindow(this, fromBubble && _bubble.IsVisible ? _bubble.Bounds() : null);
+        var page = EngineStatus.Blocks(_engine) ? SettingsPage.Engine : SettingsPage.General;
+        _settingsWindow = new SettingsWindow(this, fromBubble && _bubble.IsVisible ? _bubble.Bounds() : null, page);
         if (_iconOn is not null)
             _settingsWindow.Icon = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(_iconOn.Handle, Int32Rect.Empty, System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
         _settingsWindow.Closed += (_, _) => _settingsWindow = null;
@@ -871,13 +888,17 @@ public sealed class AppController : ISettingsHost, IDisposable
         _settingsWindow?.Rebuild();
     }
 
-    public void SetAirKey(AirKey key)
+    public void SetAirKey(AirKey key) => SetKeys(AirKeys.ChooseAir(_settings.AirKey, _settings.OffKey, key));
+
+    public void SetOffKey(AirKey key) => SetKeys(AirKeys.ChooseOff(_settings.AirKey, _settings.OffKey, key));
+
+    private void SetKeys((AirKey Air, AirKey Off) keys)
     {
-        _settings.AirKey = key;
-        _air = new AirKeyDetector(key);
-        _off = new AirKeyDetector(AirKeys.OffKey(key));
+        (_settings.AirKey, _settings.OffKey) = keys;
+        _air = new AirKeyDetector(keys.Air);
+        _off = new AirKeyDetector(keys.Off);
         _mouse.Uninstall();
-        Log.Write("AIR key: " + key);
+        Log.Write($"AIR key: {keys.Air}, off key: {keys.Off}");
         SaveSoon();
     }
 

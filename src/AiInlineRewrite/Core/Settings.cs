@@ -67,6 +67,12 @@ public sealed class Settings
 
     public AirKey AirKey { get; set; } = AirKey.RightCtrlTap;
 
+    /// <summary>
+    /// Puts AIR to sleep until the AIR key; never the same key as <see cref="AirKey"/>. A file from before this setting
+    /// gets the key it had: a tap of Right Shift, or of Right Ctrl when Right Shift is the AIR key.
+    /// </summary>
+    public AirKey OffKey { get; set; } = AirKey.RightShiftTap;
+
     /// <summary>The bubble moves with the text cursor; off, it stays at <see cref="BubbleLeft"/>, <see cref="BubbleTop"/>.</summary>
     public bool FollowCaret { get; set; } = true;
 
@@ -111,7 +117,8 @@ public sealed class Settings
 
     /// <summary>
     /// Repairs what a hand edit may have left: every tone exactly once (a missing one is added off, at the end), at
-    /// least one tone on, a known engine, layout, theme and key, a sane pause, and the defaults for empty strings.
+    /// least one tone on, a known engine, layout, theme and keys (the off key not the AIR key), a sane pause, and the
+    /// defaults for empty strings.
     /// </summary>
     public Settings Normalize()
     {
@@ -131,6 +138,7 @@ public sealed class Settings
         if (!Enum.IsDefined(Layout)) Layout = BubbleLayout.Card;
         if (!Enum.IsDefined(Theme)) Theme = AppTheme.Windows;
         if (!Enum.IsDefined(AirKey)) AirKey = AirKey.RightCtrlTap;
+        if (!Enum.IsDefined(OffKey) || OffKey == AirKey) OffKey = AirKeys.DefaultOffKey(AirKey);
         if (!Enum.IsDefined(Engine)) Engine = EngineKind.BuiltIn;
         OllamaModel = Trimmed(OllamaModel, DefaultOllamaModel);
         OllamaEndpoint = Trimmed(OllamaEndpoint, DefaultOllamaEndpoint);

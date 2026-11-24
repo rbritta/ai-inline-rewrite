@@ -51,6 +51,22 @@ public static class Icons
 
     public static FrameworkElement Close(Brush color) => Stroke(12, 12, "M2 2 L10 10 M10 2 L2 10", color, 1.6);
 
+    /// <summary>The settings menu's General item: a power sign.</summary>
+    public static FrameworkElement Power(Brush color) =>
+        Stroke(16, 16, "M8 2.2 V7.8 M4.66 5.02 A5.2 5.2 0 1 0 11.34 5.02", color, 1.6);
+
+    /// <summary>The settings menu's Tones item: lines of text.</summary>
+    public static FrameworkElement Lines(Brush color) => Stroke(16, 16, "M2.5 4 H13.5 M2.5 8 H13.5 M2.5 12 H9.5", color, 1.6);
+
+    /// <summary>The settings menu's Bubble item: a speech bubble.</summary>
+    public static FrameworkElement SpeechBubble(Brush color) =>
+        Stroke(16, 16, "M4 2.8 H12 Q14 2.8 14 4.8 V9.3 Q14 11.3 12 11.3 H7.6 L4.6 13.8 V11.3 H4 Q2 11.3 2 9.3 V4.8 Q2 2.8 4 2.8 Z", color, 1.5);
+
+    /// <summary>The settings menu's Engine item: a chip.</summary>
+    public static FrameworkElement Chip(Brush color) =>
+        Stroke(16, 16, "M5.2 4.5 H10.8 Q11.5 4.5 11.5 5.2 V10.8 Q11.5 11.5 10.8 11.5 H5.2 Q4.5 11.5 4.5 10.8 V5.2 Q4.5 4.5 5.2 4.5 Z "
+            + "M6.5 2 V4.5 M9.5 2 V4.5 M6.5 11.5 V14 M9.5 11.5 V14 M2 6.5 H4.5 M2 9.5 H4.5 M11.5 6.5 H14 M11.5 9.5 H14", color, 1.4);
+
     public static FrameworkElement Check(Brush color) => Stroke(18, 18, "M4.8 9.4 L7.8 12.3 L13.4 6.4", color, 2);
 
     public static FrameworkElement Grip(Brush color)

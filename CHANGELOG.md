@@ -6,7 +6,17 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **The off key is a setting.** It was always a tap of Right Shift (Right Ctrl when Right Shift was the AIR key); now
+  it is any key of the AIR key's list, chosen on the General page next to the AIR key. The two are never the same:
+  giving one the other's key swaps them. A plain key (Pause, Scroll Lock, Insert) as the off key is taken from the app
+  you type in, as it is for the AIR key. A settings file from before keeps the off key it had.
+
 ### Changed
+- **The settings window has a menu.** On the left, General (AIR on or off, the AIR key and the off key), Tones,
+  Bubble (layout, theme, follow the text cursor) and Engine; on the right, the page it picks, every page the same
+  height, so the window is about half as tall as the single long list it was. The engine's state also shows as a dot
+  beside Engine in the menu, and the settings open on the Engine page when the engine needs a step from you.
 - **AIR is in the Microsoft Store** ([AI Inline Rewrite](https://apps.microsoft.com/detail/9pc04775lgm1)), from
   0.3.0: signed by Microsoft and kept up to date by the Store. The README puts it first, with its badge, and keeps the
   zip from Releases as the way without the Store; uninstalling covers both.
