@@ -15,6 +15,8 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   while AIR runs. The recorder refuses a chord without Ctrl, Alt or Win, Ctrl+Alt (AltGr on ABNT2), the shortcuts
   every app counts on (Ctrl+C, V, X, Z, Y, A, S, Ctrl+Insert, Alt+F4, Alt+Space) and one another app already holds.
   If another app takes a recorded shortcut later, AIR uses a tap for that run and the tray says so.
+- **An About page**, last in the settings menu: the version (and the Store, when AIR came from it), the MIT License,
+  links to the source code, the release notes, the privacy page and the issue form, and the built-in model's credit.
 
 ### Changed
 - **The settings window has a menu.** On the left, General (AIR on or off, the AIR key and the off key), Tones,

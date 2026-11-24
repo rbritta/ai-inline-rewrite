@@ -190,7 +190,7 @@ needs a step from you, such as the built-in model's download.
 
 <div align="center">
 
-<img src="docs/settings.png" width="480" alt="The settings window on its General page: on the left the menu with General, Tones, Bubble and Engine, a green dot beside Engine; on the right AIR on, the AIR key set to Tap Right Ctrl, and the off key set to Tap Right Shift." />
+<img src="docs/settings.png" width="480" alt="The settings window on its General page: on the left the menu with General, Tones, Bubble, Engine and About, a green dot beside Engine; on the right AIR on, the AIR key set to Tap Right Ctrl, and the off key set to Tap Right Shift." />
 
 </div>
 
@@ -213,6 +213,8 @@ needs a step from you, such as the built-in model's download.
   Anthropic credential is never typed here; it stays in the environment ([Engines](#engines)). Switching engines in
   the running app is covered by the desktop smoke test; picking another model there is
   [not validated yet](TODO.md#not-validated-yet).
+- **About**: the version (and the Store, when AIR came from it), the MIT License, links to the source code, the release
+  notes, [PRIVACY.md](PRIVACY.md) and the issue form, and the built-in model's credit.
 
 <div align="center">
 

@@ -67,6 +67,10 @@ public static class Icons
         Stroke(16, 16, "M5.2 4.5 H10.8 Q11.5 4.5 11.5 5.2 V10.8 Q11.5 11.5 10.8 11.5 H5.2 Q4.5 11.5 4.5 10.8 V5.2 Q4.5 4.5 5.2 4.5 Z "
             + "M6.5 2 V4.5 M9.5 2 V4.5 M6.5 11.5 V14 M9.5 11.5 V14 M2 6.5 H4.5 M2 9.5 H4.5 M11.5 6.5 H14 M11.5 9.5 H14", color, 1.4);
 
+    /// <summary>The settings menu's About item: an i in a circle.</summary>
+    public static FrameworkElement Info(Brush color) =>
+        Stroke(16, 16, "M8 2 A6 6 0 1 1 7.99 2 Z M8 7.3 V11.3 M8 4.85 V4.9", color, 1.5);
+
     public static FrameworkElement Check(Brush color) => Stroke(18, 18, "M4.8 9.4 L7.8 12.3 L13.4 6.4", color, 2);
 
     public static FrameworkElement Grip(Brush color)

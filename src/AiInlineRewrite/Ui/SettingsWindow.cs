@@ -1,4 +1,6 @@
+using System.Diagnostics;
 using System.Globalization;
+using System.Reflection;
 using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Automation.Peers;
@@ -11,6 +13,7 @@ using System.Windows.Shapes;
 using System.Windows.Threading;
 using AiInlineRewrite.Core;
 using AiInlineRewrite.Llm;
+using AiInlineRewrite.Native;
 
 namespace AiInlineRewrite.Ui;
 
@@ -90,6 +93,9 @@ public enum SettingsPage
 
     /// <summary>The engine, its model, and its state.</summary>
     Engine,
+
+    /// <summary>The version, the license, the project's pages, and the built-in model's credit.</summary>
+    About,
 }
 
 /// <summary>
@@ -98,6 +104,7 @@ public enum SettingsPage
 /// key and the off key. Tones: check, order by the arrows or by dragging, one line each. Bubble: Layout and Theme (a
 /// click floats a preview beside the window), and Follow the text cursor with its arrow. Engine: Built-in, Ollama or
 /// Claude, the model, and the engine's state with the one step that fixes it (its color also marks the menu item).
+/// About: the version, the license, links to the project's pages, and the built-in model's credit.
 /// </summary>
 public sealed class SettingsWindow : Window
 {
@@ -108,7 +115,8 @@ public sealed class SettingsWindow : Window
     private static readonly Thickness PageMargin = new(16, 4, 16, 16);
 
     private static readonly (SettingsPage Page, string Label)[] Pages =
-        [(SettingsPage.General, "General"), (SettingsPage.Tones, "Tones"), (SettingsPage.Bubble, "Bubble"), (SettingsPage.Engine, "Engine")];
+        [(SettingsPage.General, "General"), (SettingsPage.Tones, "Tones"), (SettingsPage.Bubble, "Bubble"), (SettingsPage.Engine, "Engine"),
+         (SettingsPage.About, "About")];
 
     private readonly ISettingsHost _host;
     private readonly (Rect Bubble, Rect Area)? _beside;
@@ -295,6 +303,9 @@ public sealed class SettingsWindow : Window
             case SettingsPage.Engine:
                 body.Children.Add(EngineSection(p, first: true));
                 break;
+            case SettingsPage.About:
+                AboutSections(p, body);
+                break;
             default:
                 body.Children.Add(OnSection(p, first: true));
                 body.Children.Add(KeysSection(p));
@@ -395,6 +406,7 @@ public sealed class SettingsWindow : Window
         SettingsPage.Tones => Icons.Lines(color),
         SettingsPage.Bubble => Icons.SpeechBubble(color),
         SettingsPage.Engine => Icons.Chip(color),
+        SettingsPage.About => Icons.Info(color),
         _ => Icons.Power(color),
     };
 
@@ -897,6 +909,88 @@ public sealed class SettingsWindow : Window
         b.MouseLeave += (_, _) => b.Opacity = 1;
         Controls.OnActivate(b, _ => action());
         return b;
+    }
+
+    // ---------- about ----------
+
+    private const string ReleaseNotes = ReportLink.Repository + "/releases";
+    private const string PrivacyPage = ReportLink.Repository + "/blob/main/PRIVACY.md";
+    private const string LicensePage = ReportLink.Repository + "/blob/main/LICENSE";
+    private const string NewIssue = ReportLink.Repository + "/issues/new/choose";
+
+    private static string AppVersion =>
+        typeof(SettingsWindow).Assembly.GetName().Version is { } v ? $"{v.Major}.{v.Minor}.{v.Build}" : "?";
+
+    // The logo, the name and the version (and the Store, when AIR came from it); the license; the project's pages; and
+    // the credit of the built-in model.
+    private static void AboutSections(Palette p, StackPanel body)
+    {
+        var head = new DockPanel();
+        var logo = Icons.Q(40);
+        logo.Margin = new Thickness(0, 0, 12, 0);
+        DockPanel.SetDock(logo, Dock.Left);
+        head.Children.Add(logo);
+        var name = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        name.Children.Add(Controls.Text("AI Inline Rewrite", 15, p.Text, FontWeights.SemiBold));
+        name.Children.Add(Help(p, $"Version {AppVersion}" + (StartWithWindows.Packaged ? " · Microsoft Store" : ""), inLine: true));
+        head.Children.Add(name);
+        body.Children.Add(Section(p, true, head));
+
+        string copyright = typeof(SettingsWindow).Assembly.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright ?? "";
+        var license = new StackPanel();
+        license.Children.Add(H3(p, "License"));
+        license.Children.Add(Help(p, $"Free and open source, under the MIT License. {copyright}.", inLine: true));
+        license.Children.Add(Link(p, "Read the license", LicensePage));
+        body.Children.Add(Section(p, false, license));
+
+        var links = new StackPanel();
+        links.Children.Add(H3(p, "The project"));
+        links.Children.Add(Link(p, "Source code on GitHub", ReportLink.Repository));
+        links.Children.Add(Link(p, "Release notes", ReleaseNotes));
+        links.Children.Add(Link(p, "Privacy: what AIR reads and keeps", PrivacyPage));
+        links.Children.Add(Link(p, "Report a problem or ask for a feature", NewIssue));
+        body.Children.Add(Section(p, false, links));
+
+        var model = new StackPanel();
+        model.Children.Add(H3(p, "Built-in model"));
+        model.Children.Add(Help(p, $"{LocalModel.Name} by the Qwen team ({LocalModel.License}), run on this PC by LLamaSharp and llama.cpp (MIT).", inLine: true));
+        body.Children.Add(Section(p, false, model));
+    }
+
+    // A line of accent text that opens a page in the browser; underlined under the mouse.
+    private static DrawnButton Link(Palette p, string label, string url)
+    {
+        var text = Controls.Text(label + "  ↗", 12.5, p.Accent, FontWeights.SemiBold);
+        var b = new DrawnButton
+        {
+            Kind = AutomationControlType.Hyperlink,
+            HorizontalAlignment = HorizontalAlignment.Left,
+            Padding = new Thickness(0, 3, 2, 3),
+            Margin = new Thickness(0, 4, 0, 0),
+            Background = Brushes.Transparent,
+            Cursor = Cursors.Hand,
+            Focusable = true,
+            FocusVisualStyle = Controls.FocusRing(p),
+            ToolTip = url,
+            Child = text,
+        };
+        AutomationProperties.SetName(b, label);
+        b.MouseEnter += (_, _) => text.TextDecorations = TextDecorations.Underline;
+        b.MouseLeave += (_, _) => text.TextDecorations = null;
+        Controls.OnActivate(b, _ => OpenPage(url));
+        return b;
+    }
+
+    private static void OpenPage(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch (Exception e) when (e is System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            Log.Write("link failed: " + e.GetType().Name);
+        }
     }
 
     // ---------- tones ----------

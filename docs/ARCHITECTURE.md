@@ -91,7 +91,7 @@ when there is no room; dragging the bar (a manual drag with mouse capture, since
 Follow off and saves the position.
 
 `SettingsWindow` is code-built too and talks to the app through `ISettingsHost`. A menu on the left picks one of
-its pages (`SettingsPage`: General, Tones, Bubble, Engine), each as tall as the Tones page, so the window keeps its
+its pages (`SettingsPage`: General, Tones, Bubble, Engine, About), each as tall as the Tones page, so the window keeps its
 size. Choosing a layout or a theme floats a `PreviewWindow` beside it, rendered by the same `BubbleView`. The Engine
 page takes its choices from `EngineChoices` (Ollama's installed models, asked through the host; the three Claude
 models) and redraws its status line, and the dot beside Engine in the menu, when the app reports a new engine state
