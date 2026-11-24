@@ -6,6 +6,11 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- **AIR is in the Microsoft Store** ([AI Inline Rewrite](https://apps.microsoft.com/detail/9pc04775lgm1)), from
+  0.3.0: signed by Microsoft and kept up to date by the Store. The README puts it first, with its badge, and keeps the
+  zip from Releases as the way without the Store; uninstalling covers both.
+
 ## [0.3.0] - 2026-11-23
 
 ### Added

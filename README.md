@@ -67,11 +67,17 @@ backends, Docker, and the platforms. The Claude engine was tested only against a
 
 ## Install
 
-1. **AIR.** Download `AiInlineRewrite-vX.Y.Z-win-x64.zip` from
+<a href="https://apps.microsoft.com/detail/9pc04775lgm1?mode=direct"><img src="https://get.microsoft.com/images/en-us%20dark.svg" width="200" alt="Get it from Microsoft" /></a>
+
+1. **AIR.** Install it from the [Microsoft Store](https://apps.microsoft.com/detail/9pc04775lgm1?mode=direct): the
+   Store keeps it updated, and the package is signed by Microsoft, so SmartScreen does not ask.
+
+   Or without the Store: download `AiInlineRewrite-vX.Y.Z-win-x64.zip` from
    [Releases](https://github.com/rbritta/ai-inline-rewrite/releases/latest), unzip it anywhere and run
    `AiInlineRewrite\AiInlineRewrite.exe`. The folder is self-contained: no installer, no .NET to install. The exe is
    not code-signed yet ([code signing policy](CODE_SIGNING.md)), so SmartScreen may ask you to confirm the first run;
    the Release carries a checksum and a build attestation to [verify the download](SECURITY.md#verifying-a-download).
+   Updates are by hand: a new zip from Releases.
 
 2. **The model.** On the first start the settings open at the Engine section: click *Download* and AIR fetches its
    model once (4.7 GB, from the Qwen team's repository on Hugging Face), with a progress bar; when the connection
@@ -84,9 +90,14 @@ backends, Docker, and the platforms. The Claude engine was tested only against a
      ([docs/ENGINES.md](docs/ENGINES.md#set-it-up) walks through it, `ant auth login` included).
      [Not validated yet](TODO.md#not-validated-yet) against the live API.
 
-3. **Start with Windows** (optional): right-click the tray icon and check *Start with Windows*.
+3. **Start with Windows** (optional): right-click the tray icon and check *Start with Windows*. The Store version
+   also lists it in Task Manager under *Startup apps*.
 
-**Uninstall.** Uncheck *Start with Windows* in the tray menu (that deletes its value under
+**Uninstall.** From the Store: Settings > Apps > Installed apps > AI Inline Rewrite > Uninstall. Windows removes the
+app, its startup entry and what it saved, the downloaded model included; the only exception is a settings or model
+folder a zip copy of AIR made before, which stays where it was ([PRIVACY.md](PRIVACY.md)).
+
+From the zip: uncheck *Start with Windows* in the tray menu (that deletes its value under
 `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`), quit AIR from the tray, and delete the `AiInlineRewrite`
 folder, the folder `%AppData%\AiInlineRewrite` (the settings, and the log when it was on) and the folder
 `%LocalAppData%\AiInlineRewrite` (the downloaded model). AIR writes nothing else.

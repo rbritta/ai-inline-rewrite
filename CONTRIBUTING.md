@@ -77,6 +77,9 @@ Bump `<Version>`, move the `Unreleased` notes under `## [X.Y.Z] - YYYY-MM-DD`, p
 `vX.Y.Z` tag. The release workflow builds, tests and publishes the app folder, zips it with the README and the license,
 keeps an unsigned Microsoft Store package (MSIX) as a run artifact, and publishes a GitHub Release with the CHANGELOG
 section of that version as its notes (`tools/release-notes.ps1` refuses a tag that does not name the version).
+The package carries the Store identity from the repository variables `STORE_IDENTITY_NAME` and `STORE_PUBLISHER`; to
+ship the version in the Store, the maintainer uploads that artifact in Partner Center (*Start update*, Packages) and
+submits it for certification.
 
 ## Style
 

@@ -28,8 +28,9 @@ state it as fact.
 - **The Store package on other PCs.** On the reference machine on 2026-11-23, the package signed with a test
   certificate installed and ran with its package identity: the settings, the built-in engine (on Ollama's copy), a
   Portuguese sentence rewritten and applied in a text box, and "Start with Windows" turning the startup task on and
-  off from the tray. Uninstalling removed the package, its storage and the startup task. Not yet: a PC that never had
-  AIR or Ollama (the first run and the download inside the package), and the package as the Store signs it.
+  off from the tray. Uninstalling removed the package, its storage and the startup task. The Store certified and
+  published 0.3.0 on 2026-11-24. Not yet: installing it from the Store listing on a PC that never had AIR or Ollama
+  (the first run and the download inside the package, as the Store signed it).
 - **Ollama in Docker.** The steps in docs/ENGINES.md follow the documentation of the `ollama/ollama` image and were not
   run; AIR was tested against a native Ollama only.
 

@@ -5,6 +5,9 @@ open source projects. Until it starts, check each download as [SECURITY.md](SECU
 every release carries the zip's SHA-256 checksum and a build provenance attestation. When signing starts, this page
 and the release notes will say so.
 
+The [Microsoft Store](https://apps.microsoft.com/detail/9pc04775lgm1) copy is another matter: the Store signs its
+package with Microsoft's certificate when it publishes it, so that copy is signed today. This page covers the zip.
+
 ## What gets signed
 
 Only `AiInlineRewrite.exe` as the release workflow ([`.github/workflows/release.yml`](.github/workflows/release.yml))
