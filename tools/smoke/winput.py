@@ -73,8 +73,12 @@ def chord(mod, key):
     time.sleep(0.08)
 
 
-def type_text(text, delay=0.035):
+def type_text(text, delay=0.035, before=None):
+    """Types each character; before(), when given, runs ahead of every one (a check that the focus is still where the
+    text should go, which raises to stop)."""
     for ch in text:
+        if before is not None:
+            before()
         r = user32.VkKeyScanW(ord(ch))
         if r == -1 or (r & 0xFF) == 0xFF or (r >> 8) & 0x6:  # not on the layout, or needs Ctrl/Alt: send the character
             _send(_key(0, scan=ord(ch), uni=True), _key(0, True, scan=ord(ch), uni=True))

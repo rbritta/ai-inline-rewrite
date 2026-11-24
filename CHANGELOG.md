@@ -6,6 +6,8 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-24
+
 ### Added
 - **The off key is a setting.** It was always a tap of Right Shift (Right Ctrl when Right Shift was the AIR key); now
   it takes any of the AIR key's choices, on the General page next to the AIR key. The two are never the same: giving
@@ -135,7 +137,8 @@ The first public version.
 - A self-contained single-file exe for Windows x64, built and released by CI on a `vX.Y.Z` tag, with the zip's
   SHA-256 checksum and a build provenance attestation to verify it (SECURITY.md).
 
-[Unreleased]: https://github.com/rbritta/ai-inline-rewrite/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/rbritta/ai-inline-rewrite/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.4.0
 [0.3.0]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.3.0
 [0.2.1]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.2.1
 [0.2.0]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.2.0

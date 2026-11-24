@@ -205,9 +205,16 @@ def run(air_pid, tgt_pid, pids):
         wi.set_text(edit, '')
         focus_field()
         wi.press('end')
-        guard(pids)
-        wi.type_text(text)
+        type_here(text)
+        # a window that took the focus for a moment gets some of the keys: the box then misses them, and every check
+        # after this one would fail for the wrong reason
+        if not within(3, lambda: wi.get_text(edit) == text):
+            raise Abort(f'the typing was disturbed (the focus left for a moment): the box holds {wi.get_text(edit)!r}')
         return wait_ready()
+
+    def type_here(text):
+        """Types into the focused test window, checking before every key that it still has the focus."""
+        wi.type_text(text, before=lambda: guard(pids))
 
     def picking():
         return 'Esc' in status()
@@ -276,7 +283,7 @@ def run(air_pid, tgt_pid, pids):
     check('Esc closes pick mode and leaves the text', within(3, lambda: not picking()) and wi.get_text(edit) == EN,
           status())
     tap()
-    guard(pids); wi.type_text('x')
+    type_here('x')
     check('another key closes pick mode and types', within(3, lambda: wi.get_text(edit) == EN + 'x') and not picking(),
           repr(wi.get_text(edit)))
     guard(pids); wi.chord('rctrl', 'a')
@@ -294,7 +301,7 @@ def run(air_pid, tgt_pid, pids):
     guard(pids); wi.press('rshift')
     check('a tap of Right Shift puts AIR to sleep and hides the bubble',
           within(3, lambda: not wi.user32.IsWindowVisible(bub)))
-    guard(pids); wi.type_text(' ok')
+    type_here(' ok')
     time.sleep(2)  # nothing to wait for: the check is that no bubble comes back while AIR sleeps
     check('typing while AIR sleeps shows nothing', not wi.user32.IsWindowVisible(bub))
     guard(pids); wi.press('rctrl')

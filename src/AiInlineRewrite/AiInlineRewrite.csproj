@@ -14,7 +14,7 @@
         <AssemblyName>AiInlineRewrite</AssemblyName>
         <RootNamespace>AiInlineRewrite</RootNamespace>
         <!-- The one place the version lives; VersionTests checks the CHANGELOG agrees. -->
-        <Version>0.3.0</Version>
+        <Version>0.4.0</Version>
         <Product>AI Inline Rewrite</Product>
         <Description>Type in your language, get it rewritten right where you type.</Description>
         <Company>rbritta</Company>
