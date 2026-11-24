@@ -641,7 +641,8 @@ public sealed class AppController : ISettingsHost, IDisposable
     }
 
     // A new engine or model from the settings window, in effect at once: what the old one was writing is dropped, the
-    // new one is checked, and the next pause writes with it. Only the selected engine is ever created.
+    // old model's memory is freed (Ollama would keep it for half an hour), the new one is checked, and the next pause
+    // writes with it. Only the selected engine is ever created.
     private void SwitchEngine(string why)
     {
         _cts?.Cancel();
@@ -651,8 +652,10 @@ public sealed class AppController : ISettingsHost, IDisposable
         _rows = [];
         if (_mode is Mode.Writing or Mode.Ready or Mode.Error or Mode.Typing) _mode = Mode.Idle;
         _engine = EngineState.Unknown;
+        var old = _rewriter;
         _rewriter = RewriteEngines.Create(_settings);
         Log.Write($"engine {_rewriter.Kind}, model {_rewriter.Model} ({why})");
+        if (EngineChoices.SwitchFreesOld(old.Kind, old.Model, _rewriter.Kind, _rewriter.Model)) ReleaseModel(old, why);
         SaveSoon();
         Render();
         _settingsWindow?.SyncEngine();
@@ -840,7 +843,7 @@ public sealed class AppController : ISettingsHost, IDisposable
             _pickTimer.Stop();
             _rows = [];
             _mode = Mode.Idle;
-            ReleaseModel("AIR off");
+            ReleaseModel(_rewriter, "AIR off");
         }
         else
         {
@@ -854,9 +857,8 @@ public sealed class AppController : ISettingsHost, IDisposable
         SaveSoon();
     }
 
-    private void ReleaseModel(string why)
+    private static void ReleaseModel(IRewriteEngine engine, string why)
     {
-        var engine = _rewriter;
         _ = Task.Run(async () =>
         {
             var watch = Stopwatch.StartNew();

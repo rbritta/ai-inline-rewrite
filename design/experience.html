@@ -37,7 +37,7 @@
 
   /* the fake desktop */
   .desk { position:relative; height:700px; border-radius:12px; overflow:hidden; background:var(--desk); border:1px solid var(--line); user-select:none; }
-  .win { position:absolute; left:24px; top:24px; width:min(540px, calc(100% - 48px)); background:var(--win); border:1px solid var(--bd); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.16); overflow:hidden; }
+  .win { position:absolute; left:24px; top:24px; width:min(400px, calc(100% - 48px)); background:var(--win); border:1px solid var(--bd); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,.16); overflow:hidden; }
   .wbar { background:var(--winbar); color:var(--tx); font-size:12px; padding:7px 12px; border-bottom:1px solid var(--bd); display:flex; justify-content:space-between; }
   .wbar span:last-child { color:var(--mut); letter-spacing:6px; }
   .whead { display:flex; gap:10px; padding:6px 14px; border-bottom:1px solid var(--bd); color:var(--tx); font-size:13px; }
@@ -108,7 +108,7 @@
   .B .foot .st { flex:1; }
 
   /* settings window */
-  .pop { position:absolute; z-index:8; right:14px; top:14px; width:384px; max-height:calc(100% - 68px); display:flex; flex-direction:column; background:var(--surf); color:var(--tx);
+  .pop { position:absolute; z-index:8; right:14px; top:14px; width:528px; max-height:calc(100% - 68px); display:flex; flex-direction:column; background:var(--surf); color:var(--tx);
     border:1px solid var(--bd); border-radius:12px; box-shadow:0 18px 48px rgba(2,32,64,.30); overflow:hidden; font-size:13px; user-select:none; }
   .pop[hidden] { display:none; }
   .ph { display:flex; align-items:center; gap:8px; height:40px; padding:0 6px 0 12px; border-bottom:1px solid var(--bd); flex:none; }
@@ -117,7 +117,27 @@
   .ph .ttl .dot, .ph .ttl small { color:var(--mut); font-size:12px; }
   .ph .x { width:28px; height:28px; border:0; border-radius:6px; background:transparent; color:var(--mut); cursor:pointer; display:flex; align-items:center; justify-content:center; flex:none; }
   .ph .x:hover { background:var(--hov); color:var(--tx); }
-  .pb { overflow:auto; padding:4px 16px 16px; }
+  /* the menu on the left and the page it picks, every page the same height */
+  .pmain { display:flex; height:480px; min-height:0; }
+  .pnav { width:144px; flex:none; padding:10px 8px; border-right:1px solid var(--bd); }
+  .pnav button { position:relative; display:flex; align-items:center; gap:9px; width:100%; height:34px; margin-bottom:2px; padding:0 8px 0 12px; border:0; border-radius:8px;
+    background:transparent; color:var(--tx); font:inherit; font-size:13px; text-align:left; cursor:pointer; }
+  .pnav button:hover { background:var(--keybg); }
+  .pnav button.cur { background:var(--hov); font-weight:600; }
+  .pnav button.cur::before { content:""; position:absolute; left:3px; top:9px; bottom:9px; width:3px; border-radius:2px; background:var(--acc); }
+  .pnav svg { flex:none; color:var(--mut); }
+  .pnav button.cur svg { color:var(--acc); }
+  .pnav .edot { width:7px; height:7px; border-radius:50%; margin-left:auto; flex:none; }
+  .pb { flex:1; min-width:0; overflow:auto; padding:4px 16px 16px; }
+  .rec { margin-top:2px; padding:8px 10px; border:1.5px dashed var(--acc); border-radius:8px; background:var(--tint); font-size:12.5px; font-weight:600; }
+  .err { margin:6px 0 0; color:var(--delc); font-size:12px; line-height:1.4; }
+  .estate { display:flex; align-items:center; gap:9px; margin-top:10px; font-size:12.5px; font-weight:600; }
+  .estate i { width:8px; height:8px; border-radius:50%; flex:none; }
+  .ehint { margin:2px 0 0 17px; }
+  .about { display:flex; align-items:center; gap:12px; }
+  .about b { display:block; font-size:15px; }
+  .links a { display:block; margin-top:6px; color:var(--acc); font-size:12.5px; font-weight:600; text-decoration:none; }
+  .links a:hover { text-decoration:underline; }
   .pb section { padding:14px 0 12px; border-top:1px solid var(--bd); }
   .pb section:first-child { border-top:0; }
   .pb h3 { font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--acc); margin:0 0 2px; font-weight:700; }
@@ -168,11 +188,11 @@
   .pb h3 + .seg { margin-top:8px; }
 
   /* preview that floats beside the settings window when Layout or Theme is clicked */
-  .pv { position:absolute; z-index:8; width:484px; background:var(--surf); color:var(--tx); border:1px solid var(--bd); border-radius:12px; box-shadow:0 18px 48px rgba(2,32,64,.30);
+  .pv { position:absolute; z-index:8; width:400px; background:var(--surf); color:var(--tx); border:1px solid var(--bd); border-radius:12px; box-shadow:0 18px 48px rgba(2,32,64,.30);
     padding:10px; opacity:0; transform:translateX(8px); transition:opacity .18s, transform .18s; pointer-events:none; }
   .pv.show { opacity:1; transform:none; pointer-events:auto; }
   .pv .stage { background:var(--desk); border-radius:8px; padding:16px 10px; display:flex; justify-content:center; }
-  .pv .bub { position:static; }
+  .pv .bub { position:static; zoom:.8; }
   .pv .bub .row, .pv .bub .grab { cursor:default; }
   .pv p { margin:9px 4px 2px; font-size:12.5px; line-height:1.45; color:var(--mut); }
   .pv p b { color:var(--tx); }
@@ -211,7 +231,9 @@
         <li><b><span class="kname">Tap Right Ctrl</span></b> (press and release it alone): pick mode, the first version is selected.</li>
         <li>Move with <kbd>↓</kbd> <kbd>↑</kbd> (<kbd>↑</kbd> on the first goes to the last) and press <kbd>Enter</kbd>; or press <kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd>; or click a row. <kbd>Esc</kbd> closes. Any other key just types. Pick mode closes after 4 s without a key.</li>
         <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> after applying brings your text back.</li>
-        <li>The arrow beside the gear is blue while the bubble follows the text cursor. Drag the bubble by its bar and it stays there, with the arrow grey; click the arrow to switch between the two. The gear, or a click on the tray icon, opens the settings: on and off, the tones (check, order with the arrows or by dragging), layout, theme and the AIR key. With AIR off, the AIR key turns it on.</li>
+        <li><b><span class="oname">Tap Right Shift</span></b> (the off key) puts AIR to sleep: the bubble closes, nothing is read, and the model's memory is freed (with Ollama answering, this page asks it to unload the model, as AIR does). The AIR key wakes it and loads the model again.</li>
+        <li>The arrow beside the gear is blue while the bubble follows the text cursor. Drag the bubble by its bar and it stays there, with the arrow grey; click the arrow to switch between the two.</li>
+        <li>The gear, or a click on the tray icon, opens the settings, a menu with its pages: General (on and off, the AIR key and the off key, each a tap or a shortcut you record), Tones (check, order with the arrows or by dragging), Bubble (layout, theme, follow), Engine (switching frees the old model) and About.</li>
       </ol>
       <h2>What AIR did</h2>
       <ul class="log" id="log"></ul>
@@ -246,39 +268,59 @@ const chev = up => `<svg width="10" height="10" viewBox="0 0 10 10"><path d="${u
 const gripSvg = '<svg width="10" height="16" viewBox="0 0 10 16"><g fill="currentColor"><circle cx="3" cy="3" r="1.3"/><circle cx="7" cy="3" r="1.3"/><circle cx="3" cy="8" r="1.3"/><circle cx="7" cy="8" r="1.3"/><circle cx="3" cy="13" r="1.3"/><circle cx="7" cy="13" r="1.3"/></g></svg>';
 const xSvg = '<svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
 
-// ---------- the app's prompts, as the mockup was tried with them ----------
-const NO_PUNCT = ' Do not add a period or any final punctuation the user did not already type. Keep the first letter in the same case the user typed it.';
-const TRANSLATE = ' If the sentence is written in Portuguese (or any language other than English), translate it into natural English in this same register instead of copying or leaving it unchanged.';
+// ---------- the app's prompts (src/AiInlineRewrite/Core/Prompts.cs), as Ollama gets them ----------
+const FROM_PT = ' The sentence is in Portuguese: translate it into natural English in this same style instead of copying it. Never keep a Portuguese word and never switch to any other language.';
+const FROM_ANY = ' If the sentence is written in Portuguese, or in any language other than English, translate it into natural English in this same style instead of copying it or leaving it unchanged.';
+const SHAPE = ' Do not add a period or any final punctuation the user did not already type. Keep the first letter in the same case the user typed it, but the word I is always a capital. Answer in English only, as one sentence with no quotes, no labels and no explanation. Output ONLY the rewritten sentence.';
 const TONES = {
-  Casual:   { desc:'Fixes real mistakes and keeps your casual style; gonna and wanna stay.',
-    tpl:'You are an English writing coach for a learner writing casually. Fix real mistakes: spelling, verb tense and agreement, word order, wrong prepositions, missing apostrophes in contractions (e.g. dont -> don\'t, im -> I\'m), and capitalize the word I. BUT keep the informal casual style: never change acceptable slang or casual contractions like wanna, gonna, gotta, kinda, gimme - those are correct. Do not make it more formal, do not rephrase, do not upgrade vocabulary. If there are no real mistakes, repeat it unchanged.' + TRANSLATE + NO_PUNCT + ' Output ONLY the sentence.\n\nSentence: {0}\nCorrected:' },
-  Concise:  { desc:'Correct, formal English, short and to the point.',
-    tpl:'You are an English writing coach. Rewrite the sentence in correct, standard formal English, kept concise and to the point. Fix all grammar and spelling, and expand casual contractions and slang to their proper form (wanna -> want to, gonna -> going to, gotta -> have to, kinda -> kind of, gimme -> give me). Keep the original meaning and do not pad it with extra words.' + TRANSLATE + NO_PUNCT + ' Output ONLY the corrected sentence.\n\nSentence: {0}\nFormal:' },
-  Polished: { desc:'Formal, with fuller phrasing in plain everyday words.',
-    tpl:'You are an English writing coach. Rewrite the sentence in correct, natural formal English with slightly fuller phrasing than a terse version - you may add a connecting word or a few clarifying words - but use plain, everyday vocabulary. Do NOT use ornate, pompous, archaic or literary words. Expand casual contractions and slang. Keep the exact original meaning.' + TRANSLATE + NO_PUNCT + ' Output ONLY the corrected sentence.\n\nSentence: {0}\nFormal:' },
-  Ornate:   { desc:'Refined, literary vocabulary for very formal text.',
-    tpl:'You are an English writing coach. Rewrite the sentence in sophisticated, eloquent formal English using rich, refined vocabulary and a polished, literary tone, the way it would read in high-end professional or academic prose. Keep the exact original meaning and never invent new facts.' + TRANSLATE + NO_PUNCT + ' Output ONLY the corrected sentence.\n\nSentence: {0}\nRewritten:' },
+  Casual:     { desc:'Fixes real mistakes and keeps your casual style; gonna and wanna stay.', label:'Corrected',
+    role:`You are an English writing coach for someone writing casually. Fix only real mistakes: spelling, verb tense and agreement, word order, wrong prepositions, missing apostrophes in contractions (dont -> don't, im -> I'm), and capitalize the word I. Keep the casual style: never change acceptable slang or casual contractions like wanna, gonna, gotta, kinda, gimme; they are correct. Do not make it more formal, do not rephrase, do not upgrade the vocabulary. If there are no real mistakes, repeat it unchanged.` },
+  Concise:    { desc:'Correct and direct: hedges and filler words go.', label:'Concise',
+    role:`You are an English editor. Rewrite the sentence in correct, direct English with fewer words: remove hedges and filler such as I think, I guess, really, just, kind of, at all, and say it the shortest natural way (for example, "I think we should maybe talk about this later" becomes "we should talk about this later"). Use normal grammar: never drop the articles, pronouns or verbs a sentence needs. Expand slang (gonna -> going to, wanna -> want to). Keep the facts and the request; never add anything.` },
+  Polished:   { desc:'Formal, with fuller phrasing in plain everyday words.', label:'Polished',
+    role:`You are an English editor. Rewrite the sentence in correct, natural, professional English with fuller phrasing than a terse version: you may add a connecting word or a short clarifying phrase so it reads smoothly and courteously. Use plain, everyday vocabulary; do NOT use ornate, archaic or literary words. Expand casual contractions and slang. Keep the words the user chose for people and things, and keep the exact meaning.` },
+  Ornate:     { desc:'Refined, literary vocabulary for very formal text.', label:'Rewritten',
+    role:`You are an English editor with a literary ear. Rewrite the sentence in elegant, refined formal English with rich vocabulary, as it would read in well-written literary prose, at most about twice as long as the original. Keep the exact meaning and never invent new facts.` },
+  Diplomatic: { desc:'Softens blunt or rude wording into polite English; keeps what you mean.', label:'Diplomatic',
+    role:`You are an English editor. Rewrite the sentence so it can be sent to a colleague or a client. If it insults someone, replace the insult with a short, calm sentence about how the writer feels, starting with I. Replace harsh words such as ridiculous, stupid or useless with milder ones. Keep every other word, name, day and fact as it is and only fix mistakes. Never add a new clause, request, offer or thanks, and do not apologize for the user.` },
+  Slang:      { desc:'Everyday slang, the way people talk today: gonna, my bad, no worries.', label:'Slang',
+    role:`You are a native English speaker texting a friend. Say the sentence the way people really talk today, with casual contractions and common everyday slang where they fit, such as gonna, wanna, gotta, kinda, y'all, super, totally, for sure, no worries, my bad, grab, hang out (for example, "this movie was really good and I want to watch it again" becomes "this movie was super good and I wanna watch it again"). Keep it natural, friendly and never vulgar. Keep the exact meaning and every name, day and fact; never add a new idea, feeling or reaction.` },
+  Trendy:     { desc:"The newest internet slang: lowkey, ngl, no cap, it's giving.", label:'Trendy',
+    role:`You are a Gen Z native English speaker texting a friend. Translate or rewrite the sentence faithfully into casual English, every word of it, keeping who does what to whom exactly as written, and add one or two pieces of the newest internet slang where they fit naturally: ngl, lowkey, highkey, fr, deadass, no cap. Examples: "this movie was really good and I want to watch it again" becomes "ngl this movie was so good and I lowkey wanna watch it again"; "me liga quando chegar em casa" becomes "call me when you get home fr"; "I am really tired today" becomes "I'm deadass so tired today". Never stack slang words, never add a new idea, feeling or reaction, and keep it grammatical and never vulgar. Keep every name, day and fact.` },
 };
+const promptFor = (tone, text) => TONES[tone].role + (looksPt(text) ? FROM_PT : FROM_ANY) + SHAPE + '\n\nSentence: ' + text + '\n' + TONES[tone].label + ':';
 const SAMPLES = {
-  pt: { text:'acho que a gente precisa conversar sobre o prazo amanhã', out:{ Casual:'I think we need to talk about the deadline tomorrow', Concise:'We need to discuss the deadline tomorrow', Polished:'I believe we should discuss the deadline tomorrow', Ornate:'I believe it would be prudent for us to discuss the deadline tomorrow' } },
-  en: { text:'i dont think we can finish this until friday', out:{ Casual:'I don\'t think we can finish this by Friday', Concise:'We can\'t finish this by Friday', Polished:'I do not believe we can finish this by Friday', Ornate:'I am not persuaded that we shall be able to complete this by Friday' } },
+  pt: { text:'acho que a gente precisa conversar sobre o prazo amanhã', out:{ Casual:'I think we need to talk about the deadline tomorrow', Concise:'we need to discuss the deadline tomorrow',
+    Polished:'I believe we should discuss the deadline tomorrow', Ornate:'I believe it would be prudent for us to discuss the deadline tomorrow',
+    Diplomatic:'would it be possible for us to talk about the deadline tomorrow', Slang:'I think we gotta talk about the deadline tomorrow', Trendy:'ngl we lowkey gotta talk about the deadline tomorrow' } },
+  en: { text:'i dont think we can finish this until friday', out:{ Casual:'I don\'t think we can finish this until Friday', Concise:'we can\'t finish this until Friday',
+    Polished:'I don\'t think we\'ll be able to finish this until Friday', Ornate:'I fear we shall not be able to complete this until Friday',
+    Diplomatic:'I don\'t think we can finish this until Friday', Slang:'I don\'t think we\'re gonna finish this till Friday', Trendy:'ngl I don\'t think we can finish this till Friday fr' } },
 };
 const OLLAMA = 'http://localhost:11434', MODEL = 'qwen2.5:7b';
-const KEYS = { ControlRight:'Tap Right Ctrl', ShiftRight:'Tap Right Shift', Pause:'Pause', ScrollLock:'Scroll Lock', Insert:'Insert' };
-const TAP_KEYS = new Set(['ControlRight', 'ShiftRight']);
+// The keys the settings offer (src/AiInlineRewrite/Core/AirKey.cs): four taps, or a shortcut recorded as "Ctrl+Shift+Space"
+const TAPS = { ControlRight:'Tap Right Ctrl', ShiftRight:'Tap Right Shift', ControlLeft:'Tap Left Ctrl', ShiftLeft:'Tap Left Shift' };
+const TAKEN = ['Ctrl+C', 'Ctrl+V', 'Ctrl+X', 'Ctrl+Z', 'Ctrl+Y', 'Ctrl+A', 'Ctrl+S', 'Ctrl+Insert', 'Alt+F4', 'Alt+Space'];
+const ENGINES = { BuiltIn:'Built-in', Ollama:'Ollama', Claude:'Claude' };
+const MODELS = { BuiltIn:['Qwen2.5 7B Instruct'], Ollama:[MODEL], Claude:['Claude Haiku 5.5', 'Claude Sonnet 5.5', 'Claude Opus 5.5'] };
+const VERSION = '0.4.2', REPO = 'https://github.com/rbritta/ai-inline-rewrite';
 const PICK_MS = 4000, DEBOUNCE_MS = 700;
 
 // ---------- state ----------
-const st = { on:true, order:['Casual', 'Concise', 'Polished', 'Ornate'], tones:{ Casual:true, Concise:true, Polished:true, Ornate:false },
-  style:'A', theme:'follow', key:'ControlRight', follow:true, pos:null,
+const st = { on:true, order:['Casual', 'Concise', 'Polished', 'Ornate', 'Diplomatic', 'Slang', 'Trendy'],
+  tones:{ Casual:true, Concise:true, Polished:true, Ornate:false, Diplomatic:false, Slang:false, Trendy:false },
+  style:'A', theme:'follow', key:'ControlRight', off:'ShiftRight', recording:null, recordHeld:'', recordError:'', follow:true, pos:null,
+  page:'General', engineKind:'BuiltIn', models:{ BuiltIn:MODELS.BuiltIn[0], Ollama:MODEL, Claude:MODELS.Claude[0] },
   src:'', isPt:false, rows:[], mode:'idle', applied:'', pick:false, sel:0, pickAt:0, engine:'canned' };
 const $ = id => document.getElementById(id);
 const desk = $('desk'), field = $('field'), bub = $('bub'), pop = $('pop');
-let ctrl = null, debounce = 0, pickTimer = 0, tapAt = 0, applying = false, rafPending = false, typing = 0;
+let ctrl = null, debounce = 0, pickTimer = 0, tapAt = 0, tapCode = '', applying = false, rafPending = false, typing = 0;
 
 // ---------- helpers ----------
 const esc = s => s.replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
-const keyName = () => KEYS[st.key];
+const keyLabel = k => TAPS[k] || k;
+const keyName = () => keyLabel(st.key);
+const offName = () => keyLabel(st.off);
 const enabledTones = () => st.order.filter(t => st.tones[t]);
 const log = msg => {
   const li = document.createElement('li'), t = new Date().toTimeString().slice(0, 8);
@@ -362,6 +404,7 @@ const statusHtml = () => {
   if (st.mode === 'thinking') return 'Writing…';
   if (st.mode === 'applied') return `Applied ${st.applied} · Ctrl+Z undoes it`;
   if (st.mode === 'error') return 'Ollama is not answering';
+  if (st.mode === 'nokey') return 'No Anthropic API key';
   if (st.mode === 'ready') {
     if (st.isPt) return 'Translated from Portuguese';
     return st.rows.every(r => r.text === st.src) ? 'Looks right already' : 'English, corrected';
@@ -388,7 +431,8 @@ const render = () => {
   if (!st.on) return;
   const b = bubbleHtml(st.style, st.rows, statusHtml(), { pick:st.pick, sel:st.sel,
     elapsed:st.pick ? Math.min(PICK_MS, performance.now() - st.pickAt) : 0,
-    hint:st.mode === 'applied' ? 'Keep typing; AIR waits for the next pause.' : 'Type in Portuguese or English.' });
+    hint:st.mode === 'applied' ? 'Keep typing; AIR waits for the next pause.'
+      : st.mode === 'nokey' ? 'Set the ANTHROPIC_API_KEY environment variable, then restart AIR.' : 'Type in Portuguese or English.' });
   bub.className = b.cls;
   bub.innerHTML = b.html;
   place();
@@ -396,9 +440,20 @@ const render = () => {
 const renderSoon = () => { if (rafPending) return; rafPending = true; requestAnimationFrame(() => { rafPending = false; render(); }); };
 
 // ---------- the model ----------
+// On this page Built-in and Ollama both write through the local Ollama (Built-in with qwen2.5:7b, the same model);
+// Claude writes nothing, as on a PC without an Anthropic key.
+const mockModel = kind => kind === 'Claude' ? null : kind === 'Ollama' ? st.models.Ollama : MODEL;
+// AIR asleep or quitting frees the model, awake loads it again, and an engine switch frees the old one: with Ollama
+// answering, this page asks it the same way (keep_alive 0 unloads it, an empty prompt loads it).
+const ollamaKeep = (model, keep) => {
+  if (st.engine !== 'live' || !model) return;
+  fetch(OLLAMA + '/api/generate', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ model, keep_alive:keep }) }).catch(() => {});
+};
+const loadModel = model => ollamaKeep(model, '30m');
+const freeModel = model => ollamaKeep(model, 0);
 async function generate(prompt, signal, onDelta) {
   const r = await fetch(OLLAMA + '/api/generate', { method:'POST', headers:{ 'Content-Type':'application/json' }, signal,
-    body:JSON.stringify({ model:MODEL, prompt, stream:true, keep_alive:'30m', options:{ temperature:0, num_predict:256 } }) });
+    body:JSON.stringify({ model:mockModel(st.engineKind), prompt, stream:true, keep_alive:'30m', options:{ temperature:0, num_predict:256 } }) });
   if (!r.ok) throw new Error('HTTP ' + r.status);
   const rd = r.body.getReader(), dec = new TextDecoder();
   let buf = '', acc = '';
@@ -422,6 +477,12 @@ const sleep = (ms, signal) => new Promise((res, rej) => { const t = setTimeout(r
 async function rewrite(text) {
   ctrl?.abort();
   const my = ctrl = new AbortController();
+  if (st.engineKind === 'Claude') {
+    st.src = text; st.rows = []; st.mode = 'nokey';
+    render();
+    log('Claude: no Anthropic API key here, so nothing is written (what a PC without one shows)');
+    return;
+  }
   const tones = enabledTones();
   st.src = text; st.isPt = looksPt(text); st.mode = 'thinking';
   st.rows = tones.map(t => ({ tone:t, text:'', done:false }));
@@ -431,7 +492,7 @@ async function rewrite(text) {
   await Promise.all(st.rows.map(async row => {
     try {
       if (st.engine === 'live') {
-        const out = await generate(TONES[row.tone].tpl.replace('{0}', text), my.signal, acc => { row.text = matchPunct(text, acc); renderSoon(); });
+        const out = await generate(promptFor(row.tone, text), my.signal, acc => { row.text = matchPunct(text, acc); renderSoon(); });
         row.text = matchPunct(text, out);
       } else if (canned) {
         const full = matchPunct(text, canned.out[row.tone]);
@@ -466,7 +527,7 @@ const moveSel = step => {
 };
 const shake = () => { bub.classList.remove('shake'); void bub.offsetWidth; bub.classList.add('shake'); };
 const airKey = () => {
-  if (!st.on) { setOn(true, `${keyName()}: AIR turned on`); return; }
+  if (!st.on) { setOn(true, `${keyName()}: AIR awake; the model loads again`); return; }
   if (st.pick) { exitPick(`${keyName()} again: pick mode closed`); return; }
   if (!st.rows.length) { log(`${keyName()}: nothing to pick yet`); shake(); return; }
   enterPick();
@@ -488,9 +549,14 @@ const apply = (i, via) => {
   render();
 };
 const dismiss = via => { ctrl?.abort(); clearTimeout(pickTimer); st.pick = false; st.rows = []; st.mode = 'idle'; log(`${via}: suggestions closed`); render(); };
+const offKey = () => {
+  if (!st.on) { log(`${offName()}: AIR is asleep already`); return; }
+  setOn(false, `${offName()}: AIR asleep; the bubble closes and the model's memory is freed`);
+};
 const setOn = (on, why) => {
   st.on = on;
-  if (!on) { ctrl?.abort(); clearTimeout(debounce); clearTimeout(pickTimer); st.pick = false; st.rows = []; st.mode = 'idle'; }
+  if (!on) { ctrl?.abort(); clearTimeout(debounce); clearTimeout(pickTimer); st.pick = false; st.rows = []; st.mode = 'idle'; freeModel(mockModel(st.engineKind)); }
+  else loadModel(mockModel(st.engineKind));
   $('tray').classList.toggle('off', !on);
   $('tray').title = `AIR · ${on ? 'on' : 'off'}`;
   toast(on ? 'AIR is on' : 'AIR is off');
@@ -502,16 +568,49 @@ const setOn = (on, why) => {
 let toastT = 0;
 const toast = msg => { const t = $('toast'); t.innerHTML = qIcon(16) + msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800); };
 
-// ---------- keyboard: what the hook will do ----------
+// ---------- keyboard: what the hook does ----------
 const digitOf = code => { const m = /^(?:Digit|Numpad)([1-9])$/.exec(code); return m ? +m[1] : 0; };
 const MODS = new Set(['ShiftLeft', 'ShiftRight', 'ControlLeft', 'ControlRight', 'AltLeft', 'AltRight', 'MetaLeft', 'MetaRight', 'CapsLock']);
+// The keys a shortcut can end in: letters, digits, F1 to F24, Space, and the editing and navigation keys
+const KEY_NAMES = { Space:'Space', Insert:'Insert', Delete:'Delete', Home:'Home', End:'End', PageUp:'Page Up', PageDown:'Page Down',
+  ArrowLeft:'Left', ArrowUp:'Up', ArrowRight:'Right', ArrowDown:'Down', Pause:'Pause', ScrollLock:'Scroll Lock' };
+const keyOf = code => (/^(?:Key|Digit)([A-Z0-9])$/.exec(code) || /^(F(?:[1-9]|1\d|2[0-4]))$/.exec(code) || [])[1] || KEY_NAMES[code] || null;
+const modsOf = e => [e.metaKey && 'Win', e.ctrlKey && 'Ctrl', e.altKey && 'Alt', e.shiftKey && 'Shift'].filter(Boolean);
+const chordOf = e => { const k = keyOf(e.code); return k ? [...modsOf(e), k].join('+') : null; };
+const problem = (key, chord) => {
+  if (!key) return "That key can't be part of a shortcut: use a letter, a digit, F1 to F24, Space, or a key such as Insert, Home or an arrow.";
+  const mods = chord.split('+').slice(0, -1);
+  if (!mods.some(m => m !== 'Shift')) return 'Hold Ctrl, Alt or Win with the key: alone, or with Shift only, it belongs to the app you type in.';
+  if (mods.includes('Ctrl') && mods.includes('Alt')) return 'Ctrl+Alt is AltGr on many keyboards, the Brazilian ABNT2 among them: use another pair.';
+  if (TAKEN.includes(chord)) return `${chord} is a shortcut every app uses: record another.`;
+  return null;
+};
+// The AIR key and the off key are never the same: giving one the other's key swaps them
+const setKeys = (slot, k) => {
+  if (slot === 'air') { if (k === st.off) st.off = st.key; st.key = k; }
+  else { if (k === st.key) st.key = st.off; st.off = k; }
+  document.querySelectorAll('.kname').forEach(x => x.textContent = keyName());
+  document.querySelectorAll('.oname').forEach(x => x.textContent = offName());
+  log(`Settings: the AIR key is ${keyName()}, the off key ${offName()}`);
+};
+const record = e => {
+  e.preventDefault(); e.stopPropagation();
+  if (e.code === 'Escape') { st.recording = null; log('Settings: recording cancelled'); renderPop(); return; }
+  if (MODS.has(e.code)) { st.recordHeld = modsOf(e).join('+'); st.recordError = ''; renderPop(); return; }
+  const key = keyOf(e.code), chord = key && [...modsOf(e), key].join('+'), why = problem(key, chord);
+  if (why) { st.recordHeld = chord || ''; st.recordError = why; renderPop(); return; }
+  const slot = st.recording;
+  st.recording = null; st.recordHeld = ''; st.recordError = '';
+  setKeys(slot, chord);
+  renderPop();
+};
 document.addEventListener('keydown', e => {
+  if (st.recording) { record(e); return; }
   if (!pop.hidden && e.code === 'Escape') { closePop(); return; }
-  if (e.code === st.key) {
-    if (e.repeat) return;
-    if (TAP_KEYS.has(st.key)) { tapAt = performance.now(); return; }
-    e.preventDefault(); airKey(); return;
-  }
+  // a recorded shortcut acts at once; a tap waits for its key to come up with no other key between
+  const chord = MODS.has(e.code) ? null : chordOf(e);
+  if (chord && (chord === st.key || chord === st.off)) { e.preventDefault(); tapAt = 0; if (!e.repeat) (chord === st.key ? airKey : offKey)(); return; }
+  if (TAPS[e.code] && (e.code === st.key || e.code === st.off)) { if (!e.repeat) { tapCode = e.code; tapAt = performance.now(); } return; }
   tapAt = 0;
   if (!st.pick || !st.on) return;
   const d = digitOf(e.code);
@@ -523,10 +622,13 @@ document.addEventListener('keydown', e => {
   exitPick(`"${e.key.length === 1 ? e.key : e.code}" is not a pick key: pick mode closed, the key went through`);
 }, true);
 document.addEventListener('keyup', e => {
-  if (e.code !== st.key || !TAP_KEYS.has(st.key)) return;
-  const tapped = tapAt && performance.now() - tapAt < 600;
+  if (st.recording && MODS.has(e.code)) { st.recordHeld = modsOf(e).join('+'); renderPop(); return; }
+  if (!tapAt || e.code !== tapCode) return;
+  const tapped = performance.now() - tapAt < 600;
   tapAt = 0;
-  if (tapped) airKey();
+  if (!tapped) return;
+  if (e.code === st.key) airKey();
+  else if (e.code === st.off) offKey();
 }, true);
 document.addEventListener('mousedown', () => { tapAt = 0; }, true);
 
@@ -586,17 +688,32 @@ bub.addEventListener('click', e => {
 
 // ---------- settings window ----------
 const radio = (name, val, label, cur) => `<label><input type="radio" name="${name}" value="${val}"${cur === val ? ' checked' : ''}>${label}</label>`;
-const renderPop = () => {
-  hidePreview();
-  const body = pop.querySelector('.pb'), scroll = body ? body.scrollTop : 0;
+// The menu: each page with its icon (src/AiInlineRewrite/Ui/Icons.cs), drawn on a 16 px grid
+const PAGES = [['General', 'M8 2.2 V7.8 M4.66 5.02 A5.2 5.2 0 1 0 11.34 5.02', 1.6], ['Tones', 'M2.5 4 H13.5 M2.5 8 H13.5 M2.5 12 H9.5', 1.6],
+  ['Bubble', 'M4 2.8 H12 Q14 2.8 14 4.8 V9.3 Q14 11.3 12 11.3 H7.6 L4.6 13.8 V11.3 H4 Q2 11.3 2 9.3 V4.8 Q2 2.8 4 2.8 Z', 1.5],
+  ['Engine', 'M5.2 4.5 H10.8 Q11.5 4.5 11.5 5.2 V10.8 Q11.5 11.5 10.8 11.5 H5.2 Q4.5 11.5 4.5 10.8 V5.2 Q4.5 4.5 5.2 4.5 Z M6.5 2 V4.5 M9.5 2 V4.5 M6.5 11.5 V14 M9.5 11.5 V14 M2 6.5 H4.5 M2 9.5 H4.5 M11.5 6.5 H14 M11.5 9.5 H14', 1.4],
+  ['About', 'M8 2 A6 6 0 1 1 7.99 2 Z M8 7.3 V11.3 M8 4.85 V4.9', 1.5]];
+const navIcon = (d, w) => `<svg viewBox="0 0 16 16" width="16" height="16"><path d="${d}" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+// The engine's state, as the Engine page and the dot beside it in the menu show it
+const engineState = () => st.engineKind === 'Claude'
+  ? { color:'var(--delc)', status:'No Anthropic API key', hint:'Set the ANTHROPIC_API_KEY environment variable, then restart AIR.' }
+  : st.engineKind === 'Ollama' && st.engine !== 'live'
+    ? { color:'var(--delc)', status:'Ollama is not running', hint:'Start Ollama (ollama.com), then type again.' }
+    : { color:'var(--insc)', status:'Ready', hint:'' };
+// A key's dropdown: the four taps, the recorded shortcut in use, and "Custom shortcut…", which turns it into the recorder
+const keySection = (slot, title, help) => {
+  const cur = slot === 'air' ? st.key : st.off;
+  const opts = [...Object.entries(TAPS), ...(TAPS[cur] ? [] : [[cur, cur]]), ['record', 'Custom shortcut…']];
+  const body = st.recording === slot
+    ? `<div class="rec">${st.recordHeld ? esc(st.recordHeld) : 'Press the keys…'}</div>
+       <p class="help after">Hold Ctrl, Alt or Win (Shift too, if you like) and press a key. Esc cancels.</p>${st.recordError ? `<p class="err">${esc(st.recordError)}</p>` : ''}`
+    : `<select data-slot="${slot}">${opts.map(([k, v]) => `<option value="${esc(k)}"${k === cur ? ' selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
+  return `<section><h3>${title}</h3><p class="help">${help}</p>${body}</section>`;
+};
+const pageHtml = () => {
   const on = enabledTones();
-  pop.innerHTML = `
-    <div class="ph">${qIcon(18)}<div class="ttl"><b>AI Inline Rewrite</b><span class="dot">·</span><small>Settings</small></div>
-      <button class="x" id="closepop" title="Close">${xSvg}</button></div>
-    <div class="pb">
-      <section><div class="line"><div><h3>AIR</h3><p class="help">Off: AIR stops reading what you type. The AIR key turns it back on.</p></div>
-        <label class="sw"><input type="checkbox" id="onsw"${st.on ? ' checked' : ''}><i></i><span>${st.on ? 'On' : 'Off'}</span></label></div></section>
-      <section><h3>Tones</h3><p class="help">Each checked tone is one version in the bubble, in this order; its number is its key. Reorder with the arrows or by dragging.</p>
+  switch (st.page) {
+    case 'Tones': return `<section><h3>Tones</h3><p class="help">Each checked tone is one version in the bubble, in this order; its number is its key. Reorder with the arrows or by dragging.</p>
         <ul class="tones">${st.order.map((t, i) => `
           <li class="ti${st.tones[t] ? '' : ' dis'}" draggable="true" data-name="${t}">
             <span class="grip" title="Drag to reorder">${gripSvg}</span>
@@ -604,20 +721,66 @@ const renderPop = () => {
             <span class="num">${st.tones[t] ? on.indexOf(t) + 1 : '·'}</span>
             <div class="tinfo"><b>${t}</b><small>${TONES[t].desc}</small></div>
             <div class="mv"><button data-move="-1" data-name="${t}" title="Move up"${i === 0 ? ' disabled' : ''}>${chev(true)}</button><button data-move="1" data-name="${t}" title="Move down"${i === st.order.length - 1 ? ' disabled' : ''}>${chev(false)}</button></div>
-          </li>`).join('')}</ul></section>
-      <section data-sec="style"><h3>Layout</h3>
+          </li>`).join('')}</ul></section>`;
+    case 'Bubble': return `<section data-sec="style"><h3>Layout</h3>
         <div class="seg">${radio('style', 'A', 'Card', st.style)}${radio('style', 'B', 'Compact', st.style)}</div></section>
       <section data-sec="theme"><h3>Theme</h3>
         <div class="seg">${radio('theme', 'follow', 'Windows', st.theme)}${radio('theme', 'light', 'Light', st.theme)}${radio('theme', 'dark', 'Dark', st.theme)}</div></section>
-      <section><h3>AIR key</h3><p class="help">Opens pick mode: then ↑ ↓ and Enter, a number, or Esc. A tap is a press and release with no other key.</p>
-        <select id="keysel">${Object.entries(KEYS).map(([k, v]) => `<option value="${k}"${k === st.key ? ' selected' : ''}>${v}</option>`).join('')}</select></section>
       <section><div class="line"><span class="lic fol${st.follow ? ' on' : ''}">${navIcons(18)}</span><div><h3>Follow the text cursor</h3><p class="help">Off: the bubble stays where you leave it. The same arrow beside the gear switches it.</p></div>
-        <label class="sw"><input type="checkbox" id="follow"${st.follow ? ' checked' : ''}><i></i><span>${st.follow ? 'On' : 'Off'}</span></label></div></section>
+        <label class="sw"><input type="checkbox" id="follow"${st.follow ? ' checked' : ''}><i></i><span>${st.follow ? 'On' : 'Off'}</span></label></div></section>`;
+    case 'Engine': {
+      const s = engineState();
+      return `<section><h3>Engine</h3><p class="help">The model that writes the versions. Built-in runs it inside AIR and Ollama runs it in Ollama, both on this PC; Claude sends the sentence you are typing to Anthropic's API.</p>
+        <div class="seg">${Object.entries(ENGINES).map(([k, v]) => radio('engine', k, v, st.engineKind)).join('')}</div>
+        <select id="modelsel" style="margin-top:8px">${MODELS[st.engineKind].map(m => `<option${m === st.models[st.engineKind] ? ' selected' : ''}>${esc(m)}</option>`).join('')}</select>
+        <div class="estate"><i style="background:${s.color}"></i>${s.status}</div>${s.hint ? `<p class="help ehint">${s.hint}</p>` : ''}
+        <p class="help after">On this page Built-in and Ollama both write through your Ollama when it answers, else the two samples; Claude shows a PC without an Anthropic key. A switch frees the old model's memory, as AIR does.</p></section>`;
+    }
+    case 'About': return `<section><div class="about">${qIcon(40)}<div><b>AI Inline Rewrite</b><p class="help" style="margin:0">Version ${VERSION}</p></div></div></section>
+      <section><h3>License</h3><p class="help">Free and open source, under the MIT License. Copyright (c) 2026 rbritta.</p>
+        <div class="links"><a href="${REPO}/blob/main/LICENSE" target="_blank" rel="noopener">Read the license ↗</a></div></section>
+      <section><h3>The project</h3><div class="links">
+        <a href="${REPO}" target="_blank" rel="noopener">Source code on GitHub ↗</a><a href="${REPO}/releases" target="_blank" rel="noopener">Release notes ↗</a>
+        <a href="${REPO}/blob/main/PRIVACY.md" target="_blank" rel="noopener">Privacy: what AIR reads and keeps ↗</a><a href="${REPO}/issues/new/choose" target="_blank" rel="noopener">Report a problem or ask for a feature ↗</a></div></section>
+      <section><h3>Built-in model</h3><p class="help">Qwen2.5 7B Instruct by the Qwen team (Apache 2.0), run on this PC by LLamaSharp and llama.cpp (MIT).</p></section>`;
+    default: return `<section><div class="line"><div><h3>AIR</h3><p class="help">Off: AIR stops reading and frees the model's memory. The AIR key turns it back on.</p></div>
+        <label class="sw"><input type="checkbox" id="onsw"${st.on ? ' checked' : ''}><i></i><span>${st.on ? 'On' : 'Off'}</span></label></div></section>`
+      + keySection('air', 'AIR key', 'Opens pick mode: then ↑ ↓ and Enter, a number, or Esc. A tap is a press and release with no other key.')
+      + keySection('off', 'Off key', "Puts AIR to sleep and frees the model's memory until the AIR key wakes it. Picking the AIR key's tap swaps them.");
+  }
+};
+const renderPop = (keepScroll = true) => {
+  hidePreview();
+  const body = pop.querySelector('.pb'), scroll = body && keepScroll ? body.scrollTop : 0, s = engineState();
+  pop.innerHTML = `
+    <div class="ph">${qIcon(18)}<div class="ttl"><b>AI Inline Rewrite</b><span class="dot">·</span><small>Settings</small></div>
+      <button class="x" id="closepop" title="Close">${xSvg}</button></div>
+    <div class="pmain">
+      <nav class="pnav">${PAGES.map(([p, d, w]) => `<button data-page="${p}"${p === st.page ? ' class="cur"' : ''}>${navIcon(d, w)}${p}${p === 'Engine' ? `<i class="edot" style="background:${s.color}" title="${s.status}"></i>` : ''}</button>`).join('')}</nav>
+      <div class="pb">${pageHtml()}</div>
     </div>`;
   pop.querySelector('.pb').scrollTop = scroll;
 };
+// Another engine, or another Ollama model: what the old one wrote is dropped and its model freed, the new one loaded
+const switchEngine = (kind, model) => {
+  const oldKind = st.engineKind, before = mockModel(oldKind);
+  const held = oldKind === 'Claude' ? '' : oldKind === 'BuiltIn' ? 'the built-in model' : `Ollama's ${st.models.Ollama}`;
+  if (kind === oldKind && (model === undefined || model === st.models[kind])) return;
+  st.engineKind = kind;
+  if (model !== undefined) st.models[kind] = model;
+  ctrl?.abort(); exitPick(); clearTimeout(debounce);
+  st.rows = []; st.mode = kind === 'Claude' ? 'nokey' : 'idle';
+  const after = mockModel(kind);
+  // what AIR does (EngineChoices.SwitchFreesOld): another engine or model frees the old one's memory
+  log(`Settings: ${model === undefined ? 'engine ' + ENGINES[kind] : 'model ' + model}` + (held ? `; AIR frees ${held}` : '')
+    + (kind === 'Claude' ? '' : st.on ? ' and loads the new one' : ''));
+  if (before && before !== after) freeModel(before);
+  if (after && after !== before && st.on) loadModel(after);
+  render();
+  renderPop();
+};
 const openPop = () => { renderPop(); pop.hidden = false; };
-const closePop = () => { hidePreview(); if (pop.hidden) return; pop.hidden = true; if (st.on) field.focus(); };
+const closePop = () => { hidePreview(); st.recording = null; if (pop.hidden) return; pop.hidden = true; if (st.on) field.focus(); };
 
 // Preview of a Layout or Theme choice, floating beside the settings window.
 const pv = $('pv');
@@ -675,12 +838,20 @@ pop.addEventListener('change', e => {
     if (st.src && st.rows.length) rewrite(st.src); else render();
   } else if (t.name === 'style') { st.style = t.value; log(`Settings: layout ${t.value === 'A' ? 'Card' : 'Compact'}`); render(); showPreview('style', t.value); }
   else if (t.name === 'theme') { st.theme = t.value; applyTheme(); log(`Settings: theme ${t.value === 'follow' ? 'follows Windows' : t.value}`); showPreview('theme', t.value); }
-  else if (t.id === 'keysel') { st.key = t.value; document.querySelectorAll('.kname').forEach(k => k.textContent = keyName()); log(`Settings: the AIR key is now ${keyName()}`); }
+  else if (t.dataset.slot) {
+    if (t.value === 'record') { st.recording = t.dataset.slot; st.recordHeld = ''; st.recordError = ''; log(`Settings: recording a shortcut for the ${t.dataset.slot === 'air' ? 'AIR' : 'off'} key`); }
+    else setKeys(t.dataset.slot, t.value);
+    renderPop();
+  }
+  else if (t.name === 'engine') switchEngine(t.value);
+  else if (t.id === 'modelsel') switchEngine(st.engineKind, t.value);
   else if (t.id === 'follow') setFollow(t.checked, `Settings: Follow the text cursor ${t.checked ? 'on' : 'off'}`);
   else if (t.id === 'onsw') setOn(t.checked, `Settings: AIR turned ${t.checked ? 'on' : 'off'}`);
 });
 pop.addEventListener('click', e => {
   if (e.target.closest('#closepop')) { closePop(); return; }
+  const page = e.target.closest('[data-page]');
+  if (page) { st.page = page.dataset.page; st.recording = null; renderPop(false); return; }
   const seg = e.target.closest('.seg input');
   if (seg) { showPreview(seg.name, seg.value); return; }
   const mv = e.target.closest('[data-move]');
@@ -744,15 +915,17 @@ const setEngine = (live, why) => {
   e.textContent = live ? `Live: ${MODEL} on your Ollama` : `Samples only: ${why}`;
 };
 fetch(OLLAMA + '/api/tags').then(r => r.json()).then(j => {
-  const ok = (j.models || []).some(m => m.name === MODEL);
+  const names = (j.models || []).map(m => m.name).filter(Boolean), ok = names.includes(MODEL);
+  MODELS.Ollama = ok ? names : [MODEL, ...names];
   setEngine(ok, ok ? '' : `${MODEL} is not pulled`);
-  if (ok) generate(TONES.Casual.tpl.replace('{0}', 'This is a test'), new AbortController().signal, () => {}).catch(() => {});
+  if (ok && st.on) loadModel(mockModel(st.engineKind));   // AIR awake loads the model, so the first version does not wait
+  if (!pop.hidden) renderPop();
 }).catch(() => setEngine(false, 'Ollama did not answer'));
 
 applyTheme();
 render();
 field.focus();
-log(`AIR is on. The AIR key is ${keyName()}.`);
+log(`AIR is on. The AIR key is ${keyName()}, the off key ${offName()}.`);
 </script>
 </body>
 </html>

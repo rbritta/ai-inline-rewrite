@@ -6,6 +6,21 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-24
+
+### Changed
+- **Switching engines frees the old model's memory.** Picking another engine, or another Ollama model, in the
+  settings frees the model the old one held at once (the built-in model, or Ollama's), as AIR asleep does, instead of
+  leaving it loaded up to 30 minutes; the new one is checked and loaded. Picking the same engine and model again keeps
+  it loaded.
+- The desktop smoke test also checks that switching to Claude frees the model and back to Ollama loads it, and quits
+  AIR through Exit in the tray menu (the icon on the taskbar or behind "Show Hidden Icons"), checking that quitting
+  frees the model: 34 checks.
+- `design/experience.html`, the mockup the app follows, catches up with the app: the settings menu and its five
+  pages, the off key, the four taps and a recorded shortcut for either key, the seven tones with today's prompts, the
+  engines and their states, and the About page. With Ollama answering, sleeping, waking and switching engines free and
+  load the model on it as AIR does.
+
 ## [0.4.1] - 2026-11-24
 
 ### Changed
@@ -147,7 +162,8 @@ The first public version.
 - A self-contained single-file exe for Windows x64, built and released by CI on a `vX.Y.Z` tag, with the zip's
   SHA-256 checksum and a build provenance attestation to verify it (SECURITY.md).
 
-[Unreleased]: https://github.com/rbritta/ai-inline-rewrite/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/rbritta/ai-inline-rewrite/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.4.2
 [0.4.1]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.4.1
 [0.4.0]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.4.0
 [0.3.0]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.3.0

@@ -84,8 +84,8 @@ next to the exe: Vulkan, for a GPU with a Vulkan driver (NVIDIA, AMD, Intel), an
 as it finds it while AIR is on (when AIR starts or wakes, when the engine is picked, when the download ends): all layers
 on the GPU, else 16 of them, else none (the CPU alone). On the reference machine loading took
 about 2 s, with all 29 layers on the GPU. AIR frees the model and its memory when it goes to sleep (the off key, the
-switch in the settings, the tray) or quits, and after 30 minutes without a rewrite; waking AIR, or the next pause,
-loads it again.
+switch in the settings, the tray) or quits, when another engine is picked in the settings, and after 30 minutes
+without a rewrite; waking AIR, picking it again, or the next pause loads it again.
 
 When the model cannot run (not enough memory, most likely), the bubble says "The model could not run" and asks to
 close programs that use a lot of memory. The diagnostic log (`DiagnosticLog`) records the device llama.cpp picked and
@@ -189,7 +189,8 @@ is loaded while AIR is on, from the moment it starts and until 30 minutes after 
 
 **Freeing it.** Putting AIR to sleep (the off key, the switch in the settings, the tray) or quitting it frees the
 model at once: AIR asks Ollama to unload it (`keep_alive: 0`, `OllamaClient.ReleaseAsync`), and waking AIR loads it
-again. That unloads `qwen2.5:7b` for anything else using it too; its next request loads it back. On the reference
+again. Picking another engine, or another Ollama model, in the settings frees the old model the same way. That
+unloads `qwen2.5:7b` for anything else using it too; its next request loads it back. On the reference
 machine, freeing it took about 2 s and loading it again 3.4 s. By hand:
 
 ```powershell

@@ -53,7 +53,8 @@ round. The built-in engine lives in the app (`Local/`), so the factory gets it t
 (`CheckAsync`, when it is created and when AIR wakes), gets ready (`PreloadAsync`, only while AIR is on) and frees the
 model's memory (`ReleaseAsync`, when AIR goes to sleep, from `AppController.SetOn`, or quits). A new engine or model from the settings window
 takes effect at once (`AppController.SwitchEngine`): the versions in flight are cancelled, the cached ones dropped,
-the new engine created and checked; a check that finishes after another switch is ignored. A failure the user can fix is an `EngineException` with an
+the new engine created and checked, and the old one's model freed when the engine or the model changed
+(`EngineChoices.SwitchFreesOld`); a check that finishes after another switch is ignored. A failure the user can fix is an `EngineException` with an
 `EngineState`; `EngineStatus` turns it into the status line and the one-step hint, per engine.
 
 - **`OllamaClient`**: `POST /api/generate` with the whole prompt (`Prompts.For`), temperature 0, `num_predict` 256 and

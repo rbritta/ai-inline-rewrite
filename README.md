@@ -48,7 +48,7 @@ and keep typing: the versions clear, and new ones come at the next pause. The bu
 on; when you want it gone, tap **Right Shift** alone (the off key) to put AIR to sleep (or turn it off in the
 settings or the tray menu), and the AIR key brings it back. Asleep, AIR also frees the model's memory (video memory,
 on a graphics card), so a game or another app gets it back; the AIR key loads the model again, a few seconds before
-the first version. Quitting AIR frees it too.
+the first version. Quitting AIR frees it too, and so does switching to another engine or model in the settings.
 
 ## Engines
 
@@ -212,7 +212,8 @@ needs a step from you, such as the built-in model's download.
     there (grey outline arrow); click the arrow beside the gear to bring it back.
 - **Engine**: Built-in, Ollama or Claude, and the model: the built-in one, the models Ollama has installed, or Claude
   Haiku, Sonnet or Opus 5.5. Below them, the engine's state (a green dot and Ready, or what is wrong and the one step
-  that fixes it); the same dot sits beside Engine in the menu. A change applies at once, without a restart. The
+  that fixes it); the same dot sits beside Engine in the menu. A change applies at once, without a restart, and frees
+  the memory of the model the old engine held (the built-in model, or Ollama's). The
   Anthropic credential is never typed here; it stays in the environment ([Engines](#engines)). Switching engines in
   the running app is covered by the desktop smoke test; picking another model there is
   [not validated yet](TODO.md#not-validated-yet).

@@ -1,6 +1,6 @@
 """Smoke test of the real app on the real desktop: types into a text box of its own, uses the AIR key, pick mode,
-the follow arrow, the settings and their engine picker, and checks what happened through UI Automation and the text
-box's content.
+the follow arrow, the settings and their engine picker, and quits through Exit in the tray menu, and checks what
+happened through UI Automation and the text box's content.
 
 It takes over the keyboard and mouse for about 3 minutes: run it on an unlocked desktop nobody is using. It stops
 at once if the focus leaves its own windows (someone clicked elsewhere) or the desktop is locked. Anything else that
@@ -13,7 +13,9 @@ at the end.
 Needs Python 3 with Pillow, and the engine in the settings ready (Ollama with the model, or an Anthropic key).
 The engine picker checks switch to Claude and expect its no-key state, so they run only when the engine is Ollama
 and this PC has no Anthropic credential; otherwise they print SKIP. With Ollama as the engine it also checks, through
-Ollama's /api/ps, that AIR asleep frees the model and that waking it loads the model again.
+Ollama's /api/ps, that AIR asleep frees the model and waking it loads the model again, that switching to Claude frees
+it and back to Ollama loads it, and that quitting frees it. Exit is pressed in the menu of AIR's tray icon, found on
+the taskbar or behind "Show Hidden Icons"; without the icon it prints SKIP.
 """
 import ctypes
 import ctypes.wintypes as W
@@ -161,7 +163,7 @@ def main():
     tgt = subprocess.Popen(['powershell', '-NoProfile', '-STA', '-ExecutionPolicy', 'Bypass', '-File', os.path.join(HERE, 'target.ps1')])
     pids = {air.pid, tgt.pid}
     try:
-        run(air.pid, tgt.pid, pids)
+        run(air, tgt.pid, pids)
     except Abort as e:
         check('run to the end', False, str(e))
     except Exception as e:
@@ -180,7 +182,8 @@ def main():
     return 1 if failed else 0
 
 
-def run(air_pid, tgt_pid, pids):
+def run(air, tgt_pid, pids):
+    air_pid = air.pid
     form = wi.find_window('AIR smoke test')
     edit = wi.child_edit(form)
     l, t, r, b = wi.rect(form)
@@ -373,8 +376,8 @@ def run(air_pid, tgt_pid, pids):
         check('the menu opens the Engine page',
               paged and within(3, lambda: any(e['type'] == 'RadioButton' and e['name'] == 'Built-in' for e in settings_ui())),
               f'pressed {paged}')
-        ollama = next((e for e in settings_ui() if e['type'] == 'RadioButton' and e['name'] == 'Ollama'), None)
-        if anthropic_credential() or not ollama or ollama['toggle'] != 'On':
+        ollama_radio = next((e for e in settings_ui() if e['type'] == 'RadioButton' and e['name'] == 'Ollama'), None)
+        if anthropic_credential() or not ollama_radio or ollama_radio['toggle'] != 'On':
             print('SKIP engine picker: it needs Ollama as the engine and no Anthropic credential on this PC', flush=True)
         else:
             guard(pids)
@@ -383,6 +386,8 @@ def run(air_pid, tgt_pid, pids):
                   pressed and within(5, lambda: settings_say('No Anthropic API key')), f'pressed {pressed}')
             check('Engine Claude: the bubble says No Anthropic API key, same process, no restart',
                   within(5, lambda: 'No Anthropic API key' in status()), status())
+            if ollama:
+                check('Engine Claude: Ollama frees the model AIR used', within(10, lambda: not ollama_holds(ollama)))
             model = next((e for e in settings_ui() if e['name'] == 'Model'), None)
             check('Engine Claude: the model list offers the Claude models',
                   model is not None and (model['status'] or '').startswith('Claude'), model and model['status'])
@@ -392,6 +397,8 @@ def run(air_pid, tgt_pid, pids):
             switched = pressed
             check('Engine Ollama again: the settings say Ready',
                   pressed and within(15, lambda: settings_say('Ready')), f'pressed {pressed}')
+            if ollama:
+                check('Engine Ollama again: Ollama loads the model', within(20, lambda: ollama_holds(ollama)))
 
         close = find(settings_ui(), lambda e: e['name'] == 'Close', 'the X of the settings')
         click(*center(close))
@@ -402,6 +409,24 @@ def run(air_pid, tgt_pid, pids):
         rs = rows()
         check('Engine Ollama again: a fresh sample comes back corrected', 'corrected' in s and len(rs) >= 3,
               f'{s} | ' + ' / '.join(row_text(x) for x in rs))
+
+    # Exit in the menu of the tray icon (on the taskbar, or behind "Show Hidden Icons"): AIR quits and frees the model.
+    # The taskbar is the shell's, so these clicks skip aim(); nothing is typed after them.
+    name = 'AI Inline Rewrite (AIR)'
+    icon = wi.tray_icon(name)
+    if icon is None and (chevron := wi.tray_icon('Show Hidden Icons')) is not None:
+        wi.click((chevron[0] + chevron[2]) // 2, (chevron[1] + chevron[3]) // 2)
+        within(5, lambda: wi.tray_icon(name) is not None)
+        icon = wi.tray_icon(name)
+    if icon is None:
+        print('SKIP Exit from the tray: the tray icon is neither on the taskbar nor behind Show Hidden Icons', flush=True)
+        return
+    wi.right_click((icon[0] + icon[2]) // 2, (icon[1] + icon[3]) // 2)
+    pressed = within(5, lambda: wi.uia_press(air_pid, '*', 'Exit', 'MenuItem'))
+    check('Exit in the tray menu quits AIR', pressed and within(10, lambda: air.poll() is not None),
+          f'pressed {pressed}, exit code {air.poll()}')
+    if ollama:
+        check('quitting AIR frees the model: Ollama no longer holds it', within(10, lambda: not ollama_holds(ollama)))
 
 
 if __name__ == '__main__':

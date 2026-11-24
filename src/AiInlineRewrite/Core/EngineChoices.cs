@@ -41,6 +41,14 @@ public static class EngineChoices
         return options;
     }
 
+    /// <summary>
+    /// Whether a switch in the settings frees the old model's memory on this PC: another engine, or another model of
+    /// the same engine, does; the same engine and model (Ollama's "llama3" and "llama3:latest" too) keeps it loaded,
+    /// since the new engine would only load it back.
+    /// </summary>
+    public static bool SwitchFreesOld(EngineKind oldEngine, string oldModel, EngineKind newEngine, string newModel) =>
+        oldEngine != newEngine || !EngineStatus.SameModel(oldModel, newModel);
+
     /// <summary>The model names in an /api/tags answer of Ollama; null when it is not one.</summary>
     public static IReadOnlyList<string>? InstalledModels(string tagsJson)
     {

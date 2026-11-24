@@ -72,4 +72,15 @@ public class EngineChoicesTests
     [InlineData("qwen2.5:7b", "qwen2.5:14b", false)]
     public void SameModel_ignores_case_and_the_latest_tag(string a, string b, bool expected)
         => Assert.Equal(expected, EngineStatus.SameModel(a, b));
+
+    [Theory]
+    [InlineData(EngineKind.BuiltIn, "qwen2.5-7b-instruct-q4_k_m", EngineKind.Ollama, "qwen2.5:7b", true)]
+    [InlineData(EngineKind.Ollama, "qwen2.5:7b", EngineKind.Claude, "claude-haiku-5-5", true)]
+    [InlineData(EngineKind.Ollama, "qwen2.5:7b", EngineKind.BuiltIn, "qwen2.5-7b-instruct-q4_k_m", true)]
+    [InlineData(EngineKind.Ollama, "qwen2.5:7b", EngineKind.Ollama, "gemma4:12b", true)]
+    [InlineData(EngineKind.Ollama, "llama3", EngineKind.Ollama, "llama3:latest", false)]
+    [InlineData(EngineKind.Claude, "claude-haiku-5-5", EngineKind.Claude, "claude-haiku-5-5", false)]
+    public void A_switch_frees_the_old_model_unless_engine_and_model_stay(EngineKind oldEngine, string oldModel,
+        EngineKind newEngine, string newModel, bool frees)
+        => Assert.Equal(frees, EngineChoices.SwitchFreesOld(oldEngine, oldModel, newEngine, newModel));
 }

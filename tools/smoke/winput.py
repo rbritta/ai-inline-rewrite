@@ -105,6 +105,15 @@ def click(x, y):
     time.sleep(0.15)
 
 
+def right_click(x, y):
+    _mouse(x, y, 0)
+    time.sleep(0.08)
+    _mouse(x, y, 0x8)
+    time.sleep(0.06)
+    _mouse(x, y, 0x10)
+    time.sleep(0.3)
+
+
 def drag(x1, y1, x2, y2, steps=12):
     _mouse(x1, y1, 0)
     time.sleep(0.1)
@@ -179,8 +188,20 @@ def uia(pid):
     return json.loads(out.stdout.decode('utf-8') or '[]')
 
 
+def tray_icon(name):
+    """The screen rectangle (left, top, right, bottom) of the notification-area icon whose name holds `name`, on the
+    taskbar or in the open hidden-icons flyout; None when it is in neither."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    out = subprocess.run(['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', os.path.join(here, 'tray_icon.ps1'),
+                          '-Name', name], capture_output=True, text=True, encoding='utf-8', timeout=60)
+    if out.returncode != 0:
+        return None
+    return tuple(int(v) for v in out.stdout.strip().split(','))
+
+
 def uia_press(pid, window, name, control_type=''):
-    """Presses a control by its name through UI Automation (Toggle, else Invoke); True when it was found."""
+    """Presses a control by its name through UI Automation (Toggle, else Invoke); True when it was found. The window
+    '*' is any window of the process."""
     here = os.path.dirname(os.path.abspath(__file__))
     args = ['powershell', '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', os.path.join(here, 'uia_press.ps1'),
             '-ProcessId', str(pid), '-Window', window, '-Name', name]
