@@ -257,8 +257,8 @@ GPU, a 24-core desktop CPU, 64 GB of RAM). Other GPUs, CPU-only laptops and Wind
 - **Where it works**: text fields whose text Windows UI Automation exposes. Where a field cannot be read, AIR stays
   quiet. Windows does not let a normal app see the keys typed into an app running as administrator, so AIR does not
   work there.
-- **The sentence must be at the end of the field.** AIR rewrites the last sentence before the end of the text; a
-  sentence in the middle of a long document is not offered yet.
+- **The sentence must be at the end of the field.** AIR rewrites the last line before the end of the text, all of
+  it even when it holds a period; a sentence in the middle of a long document is not offered yet.
 
 When the engine cannot write (Ollama not running, the model missing, no Anthropic credential, a refused key, no
 connection), the bubble and the settings window say so and show the one step that fixes it:

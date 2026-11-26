@@ -6,16 +6,17 @@ namespace AiInlineRewrite.Tests;
 public class SentenceTests
 {
     [Theory]
-    [InlineData("Hi there. I dont think so", "I dont think so")]          // the sentence being typed
-    [InlineData("Hi there. I don't think so.", "I don't think so.")]       // a finished one, with its period
+    [InlineData("Hi there. I dont think so", "Hi there. I dont think so")]   // a period does not split the line
+    [InlineData("Hi there. I don't think so.", "Hi there. I don't think so.")] // with its final period
+    [InlineData("even today, after 40 years. They still suffer prejudice",
+        "even today, after 40 years. They still suffer prejudice")]           // a capital after it goes on too
     [InlineData("nossa, hoje foi corrido!! mas amanhã a gente conversa melhor",
-        "nossa, hoje foi corrido!! mas amanhã a gente conversa melhor")] // a lowercase word goes on
-    [InlineData("ok. vamos lá", "ok. vamos lá")]
-    [InlineData("Sim. É isso mesmo", "É isso mesmo")]                      // a Portuguese capital starts one
-    [InlineData("o valor é 3.5 mil e o site.com", "o valor é 3.5 mil e o site.com")] // no space after the mark
-    [InlineData("Talk to Mr. Smith today", "Talk to Mr. Smith today")]
-    [InlineData("Done! \"Next one\" please", "\"Next one\" please")]
-    [InlineData("First line\nsecond line here", "second line here")]
+        "nossa, hoje foi corrido!! mas amanhã a gente conversa melhor")]
+    [InlineData("Sim. É isso mesmo", "Sim. É isso mesmo")]
+    [InlineData("o valor é 3.5 mil e o site.com", "o valor é 3.5 mil e o site.com")]
+    [InlineData("Done! \"Next one\" please", "Done! \"Next one\" please")]
+    [InlineData("First line\nsecond line here", "second line here")]             // a line break starts a new one
+    [InlineData("First line.\r\n\r\nSecond one. Still second", "Second one. Still second")]
     [InlineData("Are you there?   ", "Are you there?")]
     [InlineData("", "")]
     [InlineData("   ", "")]

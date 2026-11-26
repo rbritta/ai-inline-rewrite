@@ -3,15 +3,14 @@ using System.Text.RegularExpressions;
 namespace AiInlineRewrite.Core;
 
 /// <summary>
-/// The sentence the user is typing. Typing happens at the end of the field, so it is the text after the last
-/// sentence break, with the end marks the user typed. A break is a line break, or ". ! ?" followed by a space and a
-/// capital letter; an end mark before a lowercase word ("corrido!! mas amanhã...", the way many people write in
-/// chat) or with no space after it ("3.5", "site.com") does not end the sentence.
+/// The sentence the user is typing. Typing happens at the end of the field, so it is the text after the last line
+/// break, with the end marks the user typed. Only a line break starts a new one: ". ! ?" inside the line, before a
+/// capital or not ("even today, after 40 years. They still...", "corrido!! mas amanhã..."), keeps the whole line, so
+/// a thought split by a period is rewritten in one piece.
 /// </summary>
 public static partial class Sentence
 {
-    // "Mr. Smith" is not a break; Portuguese capitals (É, Á) start a sentence too.
-    [GeneratedRegex(@"(?<!\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Sra|Jr|St|vs|etc))[.!?]+[ \t]+(?=[""“]?\p{Lu})|[\r\n]+")]
+    [GeneratedRegex(@"[\r\n]+")]
     private static partial Regex Break();
 
     public static string ExtractCurrent(string fullText)

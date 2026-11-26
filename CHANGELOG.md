@@ -6,6 +6,11 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- **Only a line break starts a new sentence.** A period, "!" or "?" inside the line no longer splits it, even before
+  a capital: for "even today, after 40 years. They still suffer prejudice" AIR offered versions of "They still suffer
+  prejudice" alone; now it rewrites the whole line. Enter (or Shift+Enter) still starts a new one.
+
 ## [0.4.2] - 2026-11-24
 
 ### Changed
