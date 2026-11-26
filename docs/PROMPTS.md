@@ -4,8 +4,7 @@ Every tone is one prompt to the model, built in
 [`src/AiInlineRewrite/Core/Prompts.cs`](../src/AiInlineRewrite/Core/Prompts.cs). Ollama gets it as one completion text
 (`Prompts.For`); Claude gets the same words split the Messages way, the instructions as the system prompt
 (`Prompts.Instructions`) and the sentence as the user message (`Prompts.Input`). The answer then goes through
-`TextShape`, which keeps the first line, drops an echoed label or quotes, drops a second sentence the user never typed,
-and gives the answer the user's own final punctuation and first-letter case. A version with letters outside the Latin
+`TextShape`, which keeps the first line, drops an echoed label or quotes, and gives the answer the user's own final punctuation and first-letter case. A version with letters outside the Latin
 alphabet is asked for once more, with a line telling the model it left English (Ollama only, `Prompts.For` with
 `retry`), and never offered if it drifts again (`TextShape.HasForeignLetters`).
 
@@ -57,7 +56,7 @@ Three other Ollama models went through the same run on the reference machine; th
 | Concise later turned telegraphic ("Send file when can") | one example of the cut it wants, and "never drop the articles, pronouns or verbs a sentence needs" |
 | Concise matched Casual on most samples | it now drops hedges: "we need to talk about the deadline tomorrow", "we can't finish this until Friday" |
 | Diplomatic invented facts ("your suggestion seems to be misunderstood") and changed the meaning ("certainly unexpected") | an insult becomes a calm sentence about how the writer feels; every other word, name, day and fact stays |
-| Diplomatic appended a second sentence | `TextShape.FirstSentence` keeps one sentence when the user typed one |
+| Diplomatic appended a second sentence | `TextShape.FirstSentence` kept one sentence when the user typed one (dropped later: when the model turned the user's ";" into a period, it cut a half the user wrote) |
 | A list of Portuguese "false friends" in every prompt made Casual answer in Spanish | dropped; `Lang` learned more Portuguese words instead (manda, arquivo, puder...) |
 
 What is still soft: Casual and Concise agree when there is nothing to cut, Polished sometimes equals Concise on short

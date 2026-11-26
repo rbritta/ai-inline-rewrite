@@ -55,7 +55,8 @@ public static class Prompts
         "with rich vocabulary, as it would read in well-written literary prose, at most about twice as long as the " +
         "original. Keep the exact meaning and never invent new facts.";
 
-    // A 7B model sometimes appends a second sentence here; TextShape.FirstSentence drops it.
+    // A 7B model sometimes appended a second sentence here, hence "Never add a new clause"; nothing cuts it afterwards,
+    // so one that slips through shows as added words in the bubble.
     private const string Diplomatic =
         "You are an English editor. Rewrite the sentence so it can be sent to a colleague or a client. If it " +
         "insults someone, replace the insult with a short, calm sentence about how the writer feels, starting " +

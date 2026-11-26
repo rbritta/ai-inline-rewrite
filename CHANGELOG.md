@@ -10,6 +10,11 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Only a line break starts a new sentence.** A period, "!" or "?" inside the line no longer splits it, even before
   a capital: for "even today, after 40 years. They still suffer prejudice" AIR offered versions of "They still suffer
   prejudice" alone; now it rewrites the whole line. Enter (or Shift+Enter) still starts a new one.
+- **The answer is never cut.** AIR used to keep only the first sentence of a version when the user had typed one, to
+  drop a sentence a small model appends on its own; when the model turned the user's ";" into a period, that cut the
+  second half the user wrote ("I tried everything; nothing worked" came back as "I tried everything"). The version
+  now goes whole; the prompts still ask for no new clause, and one that slips through shows as added words in the
+  bubble. The user's final punctuation and first-letter case are still mirrored.
 
 ## [0.4.2] - 2026-11-24
 

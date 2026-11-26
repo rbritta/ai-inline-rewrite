@@ -24,7 +24,6 @@ A small model on a PC does not always follow instructions ([PROMPTS.md](PROMPTS.
 not), so AIR checks every answer before it is offered, whatever the engine (`Core/TextShape.cs`):
 
 - it keeps the first line, without an echoed label ("Corrected:") or quotes;
-- it keeps one sentence when you typed one;
 - it ends with the punctuation you typed, or none, and starts with the case you typed;
 - it is never offered when it holds letters outside the Latin alphabet (a model asked for literary English once
   drifted into Chinese mid-sentence).

@@ -3,9 +3,10 @@ using System.Text.RegularExpressions;
 namespace AiInlineRewrite.Core;
 
 /// <summary>
-/// Shapes the model's answer to what the user typed: one clean sentence, the user's own final punctuation and the
+/// Shapes the model's answer to what the user typed: one clean line, the user's own final punctuation and the
 /// user's own first-letter case. The prompts ask for both, and this enforces them, since a small local model does
-/// not always follow.
+/// not always follow. It never cuts inside the line: what the model wrote goes whole, so a sentence the user typed is
+/// never lost to a guess about where the answer should end.
 /// </summary>
 public static partial class TextShape
 {
@@ -16,16 +17,6 @@ public static partial class TextShape
     // Kept upper whatever the user typed: the pronoun I, and day and month names ("May" left out: it is also a verb).
     [GeneratedRegex(@"^(I\b|(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|January|February|March|April|June|July|August|September|October|November|December)\b)")]
     private static partial Regex KeepUpper();
-
-    // The end of a sentence followed by another one: an end mark, spaces, then a capital (or a quote and a capital).
-    // Common abbreviations are not an end ("Mr. Smith", "e.g. This").
-    [GeneratedRegex(@"(?<!\b(?:Mr|Mrs|Ms|Dr|Prof|Sr|Jr|St|vs|etc|e\.g|i\.e))[.!?]+(?=\s+[""“]?[A-Z])")]
-    private static partial Regex SentenceBreak();
-
-    // An end mark inside what the user typed, before more words in any case ("corrido!! mas amanhã"): the user wrote
-    // more than one sentence, so the answer may hold more than one too.
-    [GeneratedRegex(@"[.!?]+\s+[""“]?\p{L}")]
-    private static partial Regex InnerEnd();
 
     private static bool IsEnd(char c) => c is '.' or '!' or '?';
 
@@ -61,17 +52,6 @@ public static partial class TextShape
     }
 
     /// <summary>
-    /// The answer up to the end of its first sentence, when the user typed a single sentence: a model sometimes
-    /// appends a second one ("...by tomorrow? I feel it's important...") that the user never wrote.
-    /// </summary>
-    public static string FirstSentence(string original, string text)
-    {
-        if (InnerEnd().IsMatch(original.Trim())) return text;
-        var m = SentenceBreak().Match(text);
-        return m.Success ? text[..(m.Index + m.Length)] : text;
-    }
-
-    /// <summary>
     /// Mirrors the user's final punctuation exactly: whatever terminal ".", "!" or "?" the original ends with (or
     /// none), the answer ends the same way. Then mirrors the case of the first letter (<see cref="MatchStartCase"/>).
     /// </summary>
@@ -80,7 +60,7 @@ public static partial class TextShape
         string o = original.TrimEnd();
         char? want = o.Length > 0 && IsEnd(o[^1]) ? o[^1] : null;
 
-        string t = FirstSentence(original, Clean(text));
+        string t = Clean(text);
         int end = t.Length;
         while (end > 0 && IsEnd(t[end - 1])) end--;
         string core = t[..end].TrimEnd();

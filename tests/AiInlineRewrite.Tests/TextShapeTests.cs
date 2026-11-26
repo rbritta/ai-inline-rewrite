@@ -50,25 +50,14 @@ public class TextShapeTests
         => Assert.Equal("we need", TextShape.MatchPunctuation("acho que a gente", "\"We need"));
 
     [Theory]
-    [InlineData("can you send me the report until tomorrow?", "can you send me the report by tomorrow? I feel it's important.", "can you send me the report by tomorrow?")]
-    [InlineData("we need to talk", "We need to talk. Let me know.", "we need to talk")]
-    [InlineData("ask him", "Ask Mr. Smith about it", "ask Mr. Smith about it")]          // an abbreviation is not an end
-    [InlineData("use any tool", "Use any tool, e.g. Notepad", "use any tool, e.g. Notepad")]
-    [InlineData("v2.0 is out", "Version 2.0 is out", "version 2.0 is out")]             // no space after the dot
-    public void A_second_sentence_the_user_never_typed_is_dropped(string typed, string version, string expected)
+    [InlineData("I tried everything; nothing worked", "I tried everything. Nothing worked.", "I tried everything. Nothing worked")]
+    [InlineData("even today, after 40 years. They still suffer prejudice", "Even today, after 40 years, they still face prejudice", "even today, after 40 years, they still face prejudice")]
+    [InlineData("done. Ship it", "Done. Ship it", "done. Ship it")]
+    [InlineData("nossa, hoje foi corrido!! mas amanhã a gente conversa melhor", "Wow, today was hectic!! But we can talk properly tomorrow", "wow, today was hectic!! But we can talk properly tomorrow")]
+    [InlineData("ask him", "Ask Mr. Smith about it", "ask Mr. Smith about it")]
+    [InlineData("v2.0 is out", "Version 2.0 is out", "version 2.0 is out")]
+    public void The_answer_is_never_cut_inside_the_line(string typed, string version, string expected)
         => Assert.Equal(expected, TextShape.MatchPunctuation(typed, version));
-
-    [Fact]
-    public void Two_typed_sentences_keep_two_in_the_answer()
-        => Assert.Equal("Done. Ship it", TextShape.FirstSentence("done. Ship it", "Done. Ship it"));
-
-    [Fact]
-    public void A_typed_end_mark_before_a_lowercase_word_keeps_both_parts_of_the_answer()
-    {
-        const string typed = "nossa, hoje foi corrido!! mas amanhã a gente conversa melhor";
-        const string answer = "Wow, today was hectic!! But we can talk properly tomorrow";
-        Assert.Equal(answer, TextShape.FirstSentence(typed, answer));
-    }
 
     [Theory]
     [InlineData("I posit that we ought to engage in discourse concerning the时限问题", true)]
