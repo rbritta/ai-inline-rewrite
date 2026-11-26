@@ -6,6 +6,8 @@ follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-11-26
+
 ### Changed
 - **Only a line break starts a new sentence.** A period, "!" or "?" inside the line no longer splits it, even before
   a capital: for "even today, after 40 years. They still suffer prejudice" AIR offered versions of "They still suffer
@@ -172,7 +174,8 @@ The first public version.
 - A self-contained single-file exe for Windows x64, built and released by CI on a `vX.Y.Z` tag, with the zip's
   SHA-256 checksum and a build provenance attestation to verify it (SECURITY.md).
 
-[Unreleased]: https://github.com/rbritta/ai-inline-rewrite/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/rbritta/ai-inline-rewrite/compare/v0.4.3...HEAD
+[0.4.3]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.4.3
 [0.4.2]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.4.2
 [0.4.1]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.4.1
 [0.4.0]: https://github.com/rbritta/ai-inline-rewrite/releases/tag/v0.4.0
